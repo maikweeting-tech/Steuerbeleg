@@ -2,7 +2,8 @@
 // ausgelieferten JavaScript), wird aber per Umgebungsvariable gesetzt.
 // Lokal: Datei .env, bei GitHub: Repository-Variable GOOGLE_CLIENT_ID.
 export const GOOGLE = {
-  clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined,
+  // Leerzeichen, Zeilenumbrüche und Anführungszeichen entfernen (häufiger Kopierfehler in der Variable)
+  clientId: ((import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) ?? '').replace(/[\s"']/g, '') || undefined,
 }
 
 // Voller Drive-Zugriff (entschieden 26.11.2026): Mit dem knappen Scope drive.file sieht die
