@@ -34,8 +34,9 @@ async function client() {
       w.forEach((x) => x.ok(token!.wert))
     },
     error_callback: (e: any) => {
-      // Google meldet "popup_closed" teils kurz bevor das Token eintrifft. Daher kurz warten und
-      // nur abbrechen, wenn bis dahin kein Token angekommen ist.
+      // Auf GitHub Pages meldet Google "popup_closed" fälschlich schon, während das Anmeldefenster
+      // noch offen ist (Cross-Origin-Opener-Policy blockiert die Abfrage window.closed). Daher nicht
+      // sofort abbrechen, sondern bis zu 3 Minuten auf das Token warten.
       const melde = () => {
         const w = warteschlange
         warteschlange = []
@@ -44,7 +45,7 @@ async function client() {
           : e?.message || 'Anmeldung abgebrochen'
         w.forEach((x) => x.fehler(new Error(text)))
       }
-      if (e?.type === 'popup_closed') setTimeout(melde, 2000)
+      if (e?.type === 'popup_closed') setTimeout(melde, 180_000)
       else melde()
     },
   })
