@@ -29,6 +29,11 @@ npm install
 ```
 `npm install` lädt die Bibliotheken (dauert 1 bis 2 Minuten, Warnungen sind normal).
 
+> **Windows-Hinweis:** Meldet PowerShell „Ausführung von Skripts ist deaktiviert“, immer `npm.cmd`
+> statt `npm` schreiben (z. B. `npm.cmd install`, `npm.cmd run dev`). Jedes neue PowerShell-Fenster
+> startet in `C:\Users\<Name>` – vorher immer `cd $HOME\Documents\Steuerbeleg`.
+> `npm audit fix --force` bitte nicht ausführen.
+
 ## C. Google-Cloud-Konsole
 
 Mit **deinem** Google-Konto (Maik) unter <https://console.cloud.google.com>:

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { abmelden, holeNutzer, holeToken, warAngemeldet, type Nutzer } from '../google/auth'
 import { fehlendeKennungen } from '../google/umgebung'
 import { richteEin, sucheWurzel, speichereWurzel, type Ergebnis } from '../daten/einrichtung'
-import { kinder, freigeben, datei, type DriveDatei } from '../google/drive'
+import { kinder, datei, type DriveDatei } from '../google/drive'
 import { waehleOrdner } from '../google/picker'
 import { KONFIGURATIONEN, AKTUELLES_JAHR } from '../konfig'
 import { belegindexName } from '../daten/schema'
@@ -16,7 +16,6 @@ export default function Start() {
   const [fehler, setFehler] = useState('')
   const [ergebnis, setErgebnis] = useState<Ergebnis | null>(null)
   const [pruefung, setPruefung] = useState<string[] | null>(null)
-  const [email, setEmail] = useState('')
   const [meldung, setMeldung] = useState('')
   const fehlend = fehlendeKennungen()
 
@@ -113,15 +112,11 @@ export default function Start() {
       {nutzer && wurzel && (
         <div className="karte">
           <h2>4. Für Partner/in freigeben</h2>
-          <div className="zeile">
-            <input type="email" placeholder="E-Mail-Adresse" value={email} onChange={(e) => setEmail(e.target.value)} />
-            <button disabled={!!laeuft || !/^\S+@\S+\.\S+$/.test(email)} onClick={() => aufgabe('Freigabe …', async () => {
-              await freigeben(wurzel.id, email.trim())
-              setMeldung(`Ordner „Steuer“ für ${email.trim()} freigegeben.`)
-              setEmail('')
-            })}>Freigeben</button>
-          </div>
-          <p className="klein">Die Person erhält eine E-Mail von Google und kann den Ordner danach in der App auswählen.</p>
+          <p>
+            Die Freigabe erfolgt direkt in Google Drive (die App darf mit ihrer knappen Berechtigung keine Ordner freigeben):
+            Ordner öffnen → beim Namen „Steuer“ auf ▾ → „Teilen“ → E-Mail-Adresse eintragen → Rolle „Mitbearbeiter“ → Senden.
+          </p>
+          <a href={wurzel.webViewLink} target="_blank" rel="noreferrer"><button type="button" className="zweit">Ordner „Steuer“ in Drive öffnen</button></a>
         </div>
       )}
 
