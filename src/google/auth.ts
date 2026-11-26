@@ -34,9 +34,19 @@ async function client() {
       w.forEach((x) => x.ok(token!.wert))
     },
     error_callback: (e: any) => {
-      const w = warteschlange
-      warteschlange = []
-      w.forEach((x) => x.fehler(new Error(e?.message || 'Anmeldung abgebrochen')))
+      // Auf GitHub Pages meldet Google "popup_closed" fälschlich schon, während das Anmeldefenster
+      // noch offen ist (Cross-Origin-Opener-Policy blockiert die Abfrage window.closed). Daher nicht
+      // sofort abbrechen, sondern bis zu 3 Minuten auf das Token warten.
+      const melde = () => {
+        const w = warteschlange
+        warteschlange = []
+        const text = e?.type === 'popup_closed' ? 'Anmeldefenster wurde geschlossen. Bitte erneut anmelden.'
+          : e?.type === 'popup_failed_to_open' ? 'Anmeldefenster wurde blockiert. Bitte Pop-ups für diese Seite erlauben.'
+          : e?.message || 'Anmeldung abgebrochen'
+        w.forEach((x) => x.fehler(new Error(text)))
+      }
+      if (e?.type === 'popup_closed') setTimeout(melde, 180_000)
+      else melde()
     },
   })
   return tokenClient
