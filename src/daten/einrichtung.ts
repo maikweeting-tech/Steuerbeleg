@@ -1,7 +1,7 @@
 // Legt die Ordnerstruktur Steuer/<Jahr>/… und den Belegindex in Google Drive an.
 // Bereits vorhandene Ordner werden wiederverwendet, es entstehen keine Doppelungen.
 import { ordnerPfade, type SteuerjahrKonfig } from '../fachlich/konfiguration'
-import { erstelleWurzel, findeWurzel, holeOderErstelleOrdner, datei, type DriveDatei } from '../google/drive'
+import { erstelleWurzel, findeWurzeln, holeOderErstelleOrdner, datei, type DriveDatei } from '../google/drive'
 import { holeOderErstelleBelegindex } from '../google/sheets'
 
 const SPEICHER = 'steuerbeleg.wurzelId'
@@ -13,15 +13,31 @@ export function speichereWurzel(id: string | null) {
   try { if (id) localStorage.setItem(SPEICHER, id); else localStorage.removeItem(SPEICHER) } catch { /* privat */ }
 }
 
-/** Sucht den Ordner "Steuer": zuerst gespeicherte Id, dann per App-Eigenschaft. */
-export async function sucheWurzel(): Promise<DriveDatei | null> {
+/** Fremde (freigegebene) Ordner zuerst, dann eigene; innerhalb alphabetisch nach Eigentümer. */
+export function sortiereKandidaten(k: DriveDatei[]): DriveDatei[] {
+  const eig = (d: DriveDatei) => d.owners?.[0]?.emailAddress ?? ''
+  return [...k].sort((a, b) => Number(!!a.ownedByMe) - Number(!!b.ownedByMe) || eig(a).localeCompare(eig(b)))
+}
+
+export interface Suchergebnis {
+  /** eindeutig gefundener bzw. gespeicherter Ordner */
+  wurzel: DriveDatei | null
+  /** mehrere Kandidaten: Nutzer muss wählen */
+  kandidaten: DriveDatei[]
+}
+
+/** Sucht den Ordner "Steuer": zuerst gespeicherte Id, sonst alle Kandidaten. */
+export async function sucheWurzel(): Promise<Suchergebnis> {
   const id = gespeicherteWurzel()
   if (id) {
-    try { return await datei(id) } catch { speichereWurzel(null) }
+    try { return { wurzel: await datei(id), kandidaten: [] } } catch { speichereWurzel(null) }
   }
-  const w = await findeWurzel()
-  if (w) speichereWurzel(w.id)
-  return w
+  const k = sortiereKandidaten(await findeWurzeln())
+  if (k.length === 1) {
+    speichereWurzel(k[0].id)
+    return { wurzel: k[0], kandidaten: [] }
+  }
+  return { wurzel: null, kandidaten: k }
 }
 
 export interface Ergebnis {
@@ -37,7 +53,8 @@ export async function richteEin(
   vorhandeneWurzel?: DriveDatei | null,
 ): Promise<Ergebnis> {
   fortschritt('Ordner „Steuer“ …')
-  const wurzel = vorhandeneWurzel ?? (await sucheWurzel()) ?? (await erstelleWurzel())
+  // Neu angelegt wird nur, wenn ausdrücklich kein Ordner übergeben wurde (Knopf „Neu anlegen“).
+  const wurzel = vorhandeneWurzel ?? (await erstelleWurzel())
   speichereWurzel(wurzel.id)
   const jahresordner = await holeOderErstelleOrdner(String(konfig.steuerjahr), wurzel.id)
 

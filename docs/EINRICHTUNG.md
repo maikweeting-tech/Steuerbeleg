@@ -42,7 +42,6 @@ Mit **deinem** Google-Konto (Maik) unter <https://console.cloud.google.com>:
 2. **APIs aktivieren**: Menü → „APIs und Dienste“ → **Bibliothek**. Nacheinander suchen und „Aktivieren“:
    - **Google Drive API**
    - **Google Sheets API**
-   - **Google Picker API**
    - (ab Meilenstein 6 zusätzlich **Google Calendar API**)
 3. **Anmeldebildschirm** (heißt „Google Auth Platform“ oder „OAuth-Zustimmungsbildschirm“):
    - „Jetzt starten“ → App-Name `Steuerbeleg`, Support-E-Mail = deine Adresse.
@@ -50,7 +49,9 @@ Mit **deinem** Google-Konto (Maik) unter <https://console.cloud.google.com>:
    - Kontakt-E-Mail eintragen → Fertigstellen.
    - Bereich **Zielgruppe** → **Testnutzer** → „Nutzer hinzufügen“ → deine und Annas Gmail-Adresse.
      Die App bleibt im Status „Test“. Das ist gewollt: keine Prüfung durch Google nötig.
-   - Bereich **Datenzugriff** → „Bereiche hinzufügen“ → `.../auth/drive.file`, `openid`, `email`, `profile` → Speichern.
+   - Bereich **Datenzugriff**: nichts nötig. Die App fordert beim Anmelden vollen Drive-Zugriff
+     (`.../auth/drive`) an; sie arbeitet aber nur im Ordner „Steuer“. Grund: Mit dem knappen
+     Zugriff `drive.file` sieht die Partnerin die Unterordner nicht (getestet 26.11.2026).
 4. **OAuth-Client**: Bereich **Clients** → „Client erstellen“
    - Anwendungstyp: **Webanwendung**, Name `Steuerbeleg Web`
    - **Autorisierte JavaScript-Ursprünge** (ohne Pfad, ohne Schrägstrich am Ende):
@@ -58,25 +59,15 @@ Mit **deinem** Google-Konto (Maik) unter <https://console.cloud.google.com>:
      - `https://maikweeting-tech.github.io`
    - Weiterleitungs-URIs: leer lassen → Erstellen.
    - Die **Client-ID** (endet auf `.apps.googleusercontent.com`) kopieren.
-5. **API-Schlüssel** (nur für die Dateiauswahl): „APIs und Dienste“ → **Anmeldedaten** → „Anmeldedaten erstellen“ → **API-Schlüssel**.
-   - Schlüssel bearbeiten → Anwendungseinschränkung **Websites**:
-     `http://localhost:5173/*` und `https://maikweeting-tech.github.io/*`
-   - API-Einschränkung: nur **Google Picker API** → Speichern.
-   - Schlüssel kopieren.
-6. **Projektnummer**: Zahnrad/„Projekteinstellungen“ oder Dashboard → **Projektnummer** (nur Ziffern) kopieren.
-
-> Client-ID, API-Schlüssel und Projektnummer sind nicht geheim: Sie stehen ohnehin im
-> ausgelieferten Programm. Der API-Schlüssel ist durch die Einschränkungen oben nur von
-> euren Adressen aus nutzbar.
+> Die Client-ID ist nicht geheim: Sie steht ohnehin im ausgelieferten Programm.
+> API-Schlüssel und Picker API werden nicht mehr benötigt (falls schon angelegt: löschen oder lassen).
 
 ## D. Lokale Datei `.env`
 
 Im Ordner `Steuerbeleg` die Datei `.env.example` kopieren und die Kopie `.env` nennen.
-Die drei Werte aus Abschnitt C eintragen:
+Die Client-ID aus Abschnitt C eintragen:
 ```
 VITE_GOOGLE_CLIENT_ID=…apps.googleusercontent.com
-VITE_GOOGLE_API_KEY=AIza…
-VITE_GOOGLE_APP_ID=123456789012
 ```
 Die Datei `.env` wird nicht zu GitHub hochgeladen (steht in `.gitignore`).
 
@@ -87,6 +78,7 @@ npm run dev
 ```
 Browser: <http://localhost:5173/Steuerbeleg/>. Beenden in PowerShell mit `Strg + C`.
 
+Beim Anmelden den **Haken bei Google Drive** setzen, sonst kann die App nichts anlegen.
 Beim ersten Anmelden zeigt Google „Diese App wurde nicht von Google überprüft“ →
 „Erweitert“ → „Weiter zu Steuerbeleg“. Das ist im Test-Status normal.
 
@@ -95,10 +87,8 @@ Beim ersten Anmelden zeigt Google „Diese App wurde nicht von Google überprüf
 Auf <https://github.com/maikweeting-tech/Steuerbeleg>:
 
 1. **Settings → Pages** → „Build and deployment“ → Source: **GitHub Actions**.
-2. **Settings → Secrets and variables → Actions → Reiter „Variables“** → „New repository variable“, dreimal:
-   - `GOOGLE_CLIENT_ID` = Client-ID
-   - `GOOGLE_API_KEY` = API-Schlüssel
-   - `GOOGLE_APP_ID` = Projektnummer
+2. **Settings → Secrets and variables → Actions → Reiter „Variables“** → „New repository variable“:
+   - Name `GOOGLE_CLIENT_ID`, Wert = Client-ID
 3. Nach jedem Übernehmen in `main` baut GitHub die App automatisch (Reiter **Actions**, grüner Haken).
    Adresse: <https://maikweeting-tech.github.io/Steuerbeleg/>
 

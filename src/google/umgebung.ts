@@ -1,15 +1,15 @@
-// Öffentliche Google-Kennungen. Sie sind nicht geheim (sie stehen ohnehin im ausgelieferten
-// JavaScript), werden aber per Umgebungsvariable gesetzt, damit jeder seinen eigenen
-// Google-Cloud-Client nutzen kann. Lokal: Datei .env, bei GitHub: Repository-Variablen.
+// Öffentliche Google-Kennung des OAuth-Clients. Sie ist nicht geheim (steht ohnehin im
+// ausgelieferten JavaScript), wird aber per Umgebungsvariable gesetzt.
+// Lokal: Datei .env, bei GitHub: Repository-Variable GOOGLE_CLIENT_ID.
 export const GOOGLE = {
   clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined,
-  apiKey: import.meta.env.VITE_GOOGLE_API_KEY as string | undefined,
-  /** Projektnummer aus der Google-Cloud-Konsole, für die Dateiauswahl (Picker). */
-  appId: import.meta.env.VITE_GOOGLE_APP_ID as string | undefined,
 }
 
+// Voller Drive-Zugriff (entschieden 26.11.2026): Mit dem knappen Scope drive.file sieht die
+// Partnerin die von Maiks App angelegten Unterordner nicht. Die App arbeitet trotzdem nur im
+// Ordner "Steuer".
 export const SCOPES = [
-  'https://www.googleapis.com/auth/drive.file',
+  'https://www.googleapis.com/auth/drive',
   'openid',
   'email',
   'profile',

@@ -2,8 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { abmelden, holeNutzer, holeToken, warAngemeldet, type Nutzer } from '../google/auth'
 import { fehlendeKennungen } from '../google/umgebung'
 import { richteEin, sucheWurzel, speichereWurzel, type Ergebnis } from '../daten/einrichtung'
-import { kinder, datei, type DriveDatei } from '../google/drive'
-import { waehleOrdner } from '../google/picker'
+import { kinder, type DriveDatei } from '../google/drive'
 import { KONFIGURATIONEN, AKTUELLES_JAHR } from '../konfig'
 import { belegindexName } from '../daten/schema'
 
@@ -12,6 +11,7 @@ const konfig = KONFIGURATIONEN[AKTUELLES_JAHR]
 export default function Start() {
   const [nutzer, setNutzer] = useState<Nutzer | null>(null)
   const [wurzel, setWurzel] = useState<DriveDatei | null>(null)
+  const [kandidaten, setKandidaten] = useState<DriveDatei[]>([])
   const [laeuft, setLaeuft] = useState('')
   const [fehler, setFehler] = useState('')
   const [ergebnis, setErgebnis] = useState<Ergebnis | null>(null)
@@ -28,7 +28,9 @@ export default function Start() {
 
   const nachAnmeldung = useCallback(async () => {
     setNutzer(await holeNutzer())
-    setWurzel(await sucheWurzel())
+    const r = await sucheWurzel()
+    setWurzel(r.wurzel)
+    setKandidaten(r.kandidaten)
   }, [])
 
   useEffect(() => {
@@ -67,25 +69,45 @@ export default function Start() {
         <div className="karte">
           <h2>2. Ordner „Steuer“ in Google Drive</h2>
           {wurzel ? (
-            <p className="ok">Gefunden: <a href={wurzel.webViewLink} target="_blank" rel="noreferrer">{wurzel.name}</a></p>
+            <p className="ok">
+              Verbunden: <a href={wurzel.webViewLink} target="_blank" rel="noreferrer">{wurzel.name}</a>{' '}
+              <span className="klein">(Eigentümer: {wurzel.ownedByMe ? 'ich' : wurzel.owners?.[0]?.displayName ?? wurzel.owners?.[0]?.emailAddress ?? 'unbekannt'})</span>
+            </p>
+          ) : kandidaten.length ? (
+            <>
+              <p>Es gibt mehrere Ordner „Steuer“. Bitte den gemeinsamen auswählen:</p>
+              <ul className="liste">
+                {kandidaten.map((k) => (
+                  <li key={k.id} style={{ marginBottom: 6 }}>
+                    <button className="zweit" onClick={() => { speichereWurzel(k.id); setWurzel(k); setKandidaten([]) }}>
+                      {k.name} – Eigentümer: {k.ownedByMe ? 'ich' : k.owners?.[0]?.displayName ?? k.owners?.[0]?.emailAddress}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
           ) : (
-            <p>Noch kein Ordner verbunden.</p>
+            <p>Noch kein Ordner „Steuer“ gefunden. Wurde er für dich freigegeben? Sonst neu anlegen.</p>
           )}
           <div className="zeile">
-            <button disabled={!!laeuft} onClick={() => aufgabe('Einrichtung …', async () => {
-              const e = await richteEin(konfig, setLaeuft, wurzel)
-              setWurzel(e.wurzel); setErgebnis(e)
-            })}>
-              {wurzel ? `Struktur ${konfig.steuerjahr} prüfen / ergänzen` : `Neu anlegen (Steuer/${konfig.steuerjahr})`}
-            </button>
-            <button className="zweit" disabled={!!laeuft} onClick={() => aufgabe('Dateiauswahl …', async () => {
-              const o = await waehleOrdner()
-              if (o) { speichereWurzel(o.id); setWurzel(await datei(o.id)) }
-            })}>
-              Freigegebenen Ordner auswählen
-            </button>
+            {wurzel && (
+              <button disabled={!!laeuft} onClick={() => aufgabe('Einrichtung …', async () => {
+                setErgebnis(await richteEin(konfig, setLaeuft, wurzel))
+              })}>Struktur {konfig.steuerjahr} prüfen / ergänzen</button>
+            )}
+            {!wurzel && !kandidaten.length && (
+              <button disabled={!!laeuft} onClick={() => aufgabe('Einrichtung …', async () => {
+                const e = await richteEin(konfig, setLaeuft, null)
+                setWurzel(e.wurzel); setErgebnis(e)
+              })}>Neu anlegen (Steuer/{konfig.steuerjahr})</button>
+            )}
+            {wurzel && (
+              <button className="zweit" disabled={!!laeuft} onClick={() => { speichereWurzel(null); setWurzel(null); aufgabe('Suche …', nachAnmeldung) }}>
+                Anderen Ordner wählen
+              </button>
+            )}
           </div>
-          <p className="klein">Maik: „Neu anlegen“. Anna: „Freigegebenen Ordner auswählen“ und den von Maik freigegebenen Ordner „Steuer“ wählen.</p>
+          <p className="klein">Nur einer legt den Ordner an (Maik). Die Partnerin wählt den freigegebenen Ordner, nicht „Neu anlegen“.</p>
           {ergebnis && (
             <p className="ok">
               Fertig: {ergebnis.ordnerAnzahl} Ordner geprüft/angelegt,{' '}
