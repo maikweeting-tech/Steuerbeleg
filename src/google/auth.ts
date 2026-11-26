@@ -34,9 +34,18 @@ async function client() {
       w.forEach((x) => x.ok(token!.wert))
     },
     error_callback: (e: any) => {
-      const w = warteschlange
-      warteschlange = []
-      w.forEach((x) => x.fehler(new Error(e?.message || 'Anmeldung abgebrochen')))
+      // Google meldet "popup_closed" teils kurz bevor das Token eintrifft. Daher kurz warten und
+      // nur abbrechen, wenn bis dahin kein Token angekommen ist.
+      const melde = () => {
+        const w = warteschlange
+        warteschlange = []
+        const text = e?.type === 'popup_closed' ? 'Anmeldefenster wurde geschlossen. Bitte erneut anmelden.'
+          : e?.type === 'popup_failed_to_open' ? 'Anmeldefenster wurde blockiert. Bitte Pop-ups für diese Seite erlauben.'
+          : e?.message || 'Anmeldung abgebrochen'
+        w.forEach((x) => x.fehler(new Error(text)))
+      }
+      if (e?.type === 'popup_closed') setTimeout(melde, 2000)
+      else melde()
     },
   })
   return tokenClient
