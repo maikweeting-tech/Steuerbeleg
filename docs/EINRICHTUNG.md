@@ -57,7 +57,12 @@ Mit **deinem** Google-Konto (Maik) unter <https://console.cloud.google.com>:
    - **Autorisierte JavaScript-Ursprünge** (ohne Pfad, ohne Schrägstrich am Ende):
      - `http://localhost:5173`
      - `https://maikweeting-tech.github.io`
-   - Weiterleitungs-URIs: leer lassen → Erstellen.
+   - **Autorisierte Weiterleitungs-URIs** (genau so, **mit** Schrägstrich am Ende):
+     - `http://localhost:5173/Steuerbeleg/`
+     - `https://maikweeting-tech.github.io/Steuerbeleg/`
+   - Erstellen bzw. Speichern. Änderungen wirken bei Google nach 5 Minuten bis einigen Stunden.
+   - Grund: Die App meldet per **Weiterleitung** an (kein Pop-up). Fehlt eine Adresse, zeigt Google
+     „Fehler 400: redirect_uri_mismatch“.
    - Die **Client-ID** (endet auf `.apps.googleusercontent.com`) kopieren.
 > Die Client-ID ist nicht geheim: Sie steht ohnehin im ausgelieferten Programm.
 > API-Schlüssel und Picker API werden nicht mehr benötigt (falls schon angelegt: löschen oder lassen).

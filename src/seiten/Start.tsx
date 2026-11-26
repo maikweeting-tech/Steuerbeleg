@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { abmelden, holeNutzer, holeToken, warAngemeldet, type Nutzer } from '../google/auth'
+import { abmelden, holeNutzer, istAngemeldet, letzterAnmeldeFehler, starteAnmeldung, stilleAnmeldungMoeglich, type Nutzer } from '../google/auth'
 import { fehlendeKennungen } from '../google/umgebung'
 import { richteEin, sucheWurzel, speichereWurzel, type Ergebnis } from '../daten/einrichtung'
 import { kinder, type DriveDatei } from '../google/drive'
@@ -34,8 +34,12 @@ export default function Start() {
   }, [])
 
   useEffect(() => {
-    // Nach erneutem Öffnen still anmelden, falls schon einmal angemeldet
-    if (warAngemeldet() && !fehlend.length) aufgabe('Anmeldung …', async () => { await holeToken(false); await nachAnmeldung() })
+    if (fehlend.length) return
+    const f = letzterAnmeldeFehler()
+    if (f && f !== 'stumm') setFehler(f)
+    if (istAngemeldet()) aufgabe('Anmeldung …', nachAnmeldung)
+    // Nach erneutem Öffnen still neu anmelden, falls schon einmal angemeldet (einmal je Tab)
+    else if (stilleAnmeldungMoeglich()) { setLaeuft('Anmeldung …'); starteAnmeldung(true) }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (fehlend.length)
@@ -59,7 +63,7 @@ export default function Start() {
             <button className="zweit" onClick={() => { abmelden(); setNutzer(null); setWurzel(null) }}>Abmelden</button>
           </div>
         ) : (
-          <button disabled={!!laeuft} onClick={() => aufgabe('Anmeldung …', async () => { await holeToken(true); await nachAnmeldung() })}>
+          <button disabled={!!laeuft} onClick={() => aufgabe('Weiterleitung zu Google …', async () => starteAnmeldung())}>
             Mit Google anmelden
           </button>
         )}
