@@ -7,6 +7,7 @@ import { warteschlange } from '../daten/speicher'
 import { istAngemeldet, starteAnmeldung } from '../google/auth'
 import { formatDatum, formatEuro } from '../fachlich/format'
 import { useDaten, useStamm } from '../komponenten/hooks'
+import OrdnerWarnung from '../komponenten/OrdnerWarnung'
 
 const konfig = KONFIGURATIONEN[AKTUELLES_JAHR]
 const modulName = (id: string) => konfig.module.find((m) => m.id === id)?.name.split(' – ')[0] ?? id
@@ -49,6 +50,7 @@ export default function Belege() {
           <button className="zweit" onClick={() => starteAnmeldung()}>Anmelden</button>
         </p>
       )}
+      <OrdnerWarnung />
       <div className="zeile" style={{ marginBottom: 14 }}>
         <Link to="/erfassen"><button>+ Beleg erfassen</button></Link>
         <button className="zweit" disabled={!angemeldet || lade || laeuft} onClick={() => void aktualisiere()}>

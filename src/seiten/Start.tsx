@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { abmelden, holeNutzer, istAngemeldet, letzterAnmeldeFehler, starteAnmeldung, stilleAnmeldungMoeglich, type Nutzer } from '../google/auth'
 import { fehlendeKennungen } from '../google/umgebung'
-import { richteEin, sucheWurzel, speichereWurzel, verbindeOrdnerPerLink, type Ergebnis } from '../daten/einrichtung'
+import { richteEin, sortiereKandidaten, sucheWurzel, speichereWurzel, verbindeOrdnerPerLink, type Ergebnis } from '../daten/einrichtung'
 import { findeWurzeln, kinder, type DriveDatei } from '../google/drive'
 import { KONFIGURATIONEN, AKTUELLES_JAHR } from '../konfig'
 import { belegindexName } from '../daten/schema'
 import { aktualisiereBelege, starteSync } from '../daten/dienste'
 import { GrosseKnoepfe } from '../komponenten/Schnellerfassung'
 import { useDaten } from '../komponenten/hooks'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 const konfig = KONFIGURATIONEN[AKTUELLES_JAHR]
 
@@ -49,8 +49,22 @@ export default function Start() {
     void starteSync()
   }, [])
 
+  // „Ordner wechseln“: nichts automatisch wählen, alle gefundenen Ordner zur Auswahl zeigen
+  const wechsle = useCallback(() => aufgabe('Suche Ordner …', async () => {
+    speichereWurzel(null); setWurzel(null); setFremde([]); setErgebnis(null)
+    setKandidaten(sortiereKandidaten(await findeWurzeln()))
+  }), [aufgabe])
+  const ort = useLocation()
+  const navigiere = useNavigate()
+  const wechselGewuenscht = new URLSearchParams(ort.search).get('ordner') === 'wechseln'
+
   useEffect(() => {
     if (fehlend.length) return
+    if (wechselGewuenscht && istAngemeldet()) {
+      navigiere('/', { replace: true })
+      aufgabe('Anmeldung …', async () => { setNutzer(await holeNutzer()) }).then(wechsle)
+      return
+    }
     const f = letzterAnmeldeFehler()
     if (f && f !== 'stumm') setFehler(f)
     if (istAngemeldet()) aufgabe('Anmeldung …', nachAnmeldung)
@@ -72,6 +86,12 @@ export default function Start() {
       <div className="status-zeile">
         <Link to="/belege">{belege.length} Beleg{belege.length === 1 ? '' : 'e'} {konfig.steuerjahr}</Link>
         {wartend.length > 0 && <span className="marke-gelb">{wartend.length} warten auf Übertragung</span>}
+        {nutzer && wurzel && (
+          <span className="klein">
+            Ordner: {wurzel.name} ({wurzel.ownedByMe ? 'eigener' : `von ${wurzel.owners?.[0]?.displayName ?? wurzel.owners?.[0]?.emailAddress ?? 'anderer Person'}`}){' '}
+            <button className="zweit" style={{ minHeight: 30, padding: '2px 8px' }} disabled={!!laeuft} onClick={() => void wechsle()}>Ordner wechseln</button>
+          </span>
+        )}
         {!nutzer && !laeuft && <span className="fehler klein">Nicht angemeldet – Belege werden erst nach der Anmeldung übertragen.</span>}
       </div>
 
@@ -117,11 +137,15 @@ export default function Start() {
           )}
           {wurzel ? null : kandidaten.length ? (
             <>
-              <p>Es gibt mehrere Ordner „Steuer“. Bitte den gemeinsamen auswählen:</p>
+              <p>Gefundene Ordner „Steuer“. Bitte den <strong>gemeinsamen</strong> auswählen (meist der, dessen Eigentümer nicht „ich“ ist):</p>
               <ul className="liste">
                 {kandidaten.map((k) => (
                   <li key={k.id} style={{ marginBottom: 6 }}>
-                    <button className="zweit" onClick={() => { speichereWurzel(k.id); setWurzel(k); setKandidaten([]) }}>
+                    <button className="zweit" disabled={!!laeuft} onClick={() => aufgabe('Verbinde …', async () => {
+                      speichereWurzel(k.id); setWurzel(k); setKandidaten([])
+                      await aktualisiereBelege(konfig.steuerjahr).catch(() => undefined)
+                      setMeldung('Ordner verbunden. Belege und Objekte kommen jetzt aus diesem Ordner.')
+                    })}>
                       {k.name} – Eigentümer: {k.ownedByMe ? 'ich' : k.owners?.[0]?.displayName ?? k.owners?.[0]?.emailAddress}
                     </button>
                   </li>
@@ -165,8 +189,8 @@ export default function Start() {
               </details>
             )}
             {wurzel && (
-              <button className="zweit" disabled={!!laeuft} onClick={() => { speichereWurzel(null); setWurzel(null); aufgabe('Suche …', nachAnmeldung) }}>
-                Anderen Ordner wählen
+              <button className="zweit" disabled={!!laeuft} onClick={() => void wechsle()}>
+                Ordner wechseln
               </button>
             )}
           </div>
