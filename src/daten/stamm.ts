@@ -5,6 +5,7 @@ import type { Anteil, Einheit, Einnahme, Objekt, Umlageschluessel } from '../fac
 import type { Arbeitstage, Fahrt, Fahrtzweck, Kind } from '../fachlich/personen'
 import type { Rhythmus, Vorlage } from '../fachlich/vorlagen'
 import type { Buchung, Markierung } from '../fachlich/kontoauszug'
+import type { Antworten } from '../fachlich/assistent'
 import { KOPF_ID, LEERER_KOPF, type BescheidKopf, type BescheidPosten } from '../fachlich/bescheid'
 
 type Zelle = string | number
@@ -127,6 +128,18 @@ export function zeileAusKopf(k: BescheidKopf, von: string, am: string): Zelle[] 
   return BLAETTER.Bescheid.map((s) => w[s] ?? '')
 }
 
+// ---------------------------------------------------------------- ab S1: Erklärungs-Assistent
+
+export function antwortenAus(zeilen: Zeile[]): Antworten {
+  const a: Antworten = {}
+  for (const z of zeilen) { const g = lies('Erklaerung', z); if (g('id')) a[g('id')] = { wert: g('wert'), notiz: g('notiz') } }
+  return a
+}
+export function zeileAusAntwort(id: string, wert: string, notiz: string, von: string, am: string): Zelle[] {
+  const w: Record<string, Zelle> = { id, wert, notiz, geaendert_von: von, geaendert_am: am }
+  return BLAETTER.Erklaerung.map((s) => w[s] ?? '')
+}
+
 export interface Stamm {
   objekte: Objekt[]
   einheiten: Einheit[]
@@ -141,9 +154,10 @@ export interface Stamm {
   buchungen: ReturnType<typeof buchungAusZeile>[]
   bescheid: BescheidPosten[]
   bescheidKopf: BescheidKopf
+  antworten: Antworten
 }
 
-export const LEER: Stamm = { objekte: [], einheiten: [], einnahmen: [], aufteilung: [], kinder: [], fahrten: [], arbeitstage: [], pdfOffen: [], vorlagen: [], buchungen: [], bescheid: [], bescheidKopf: LEERER_KOPF }
+export const LEER: Stamm = { objekte: [], einheiten: [], einnahmen: [], aufteilung: [], kinder: [], fahrten: [], arbeitstage: [], pdfOffen: [], vorlagen: [], buchungen: [], bescheid: [], bescheidKopf: LEERER_KOPF, antworten: {} }
 
 export function stammAus(blaetter: Record<string, Zeile[]>): Stamm {
   const voll = (l: Zeile[] | undefined) => (l ?? []).filter((z) => z[0] !== undefined && z[0] !== '')
@@ -159,6 +173,7 @@ export function stammAus(blaetter: Record<string, Zeile[]>): Stamm {
     vorlagen: voll(blaetter.Vorlagen).map(vorlageAusZeile),
     buchungen: voll(blaetter.Buchungen).map(buchungAusZeile),
     bescheid: voll(blaetter.Bescheid).filter((z) => z[0] !== KOPF_ID).map(bescheidAusZeile),
+    antworten: antwortenAus(voll(blaetter.Erklaerung)),
     bescheidKopf: kopfAusZeile(voll(blaetter.Bescheid).find((z) => z[0] === KOPF_ID)),
   }
 }

@@ -35,6 +35,8 @@ export const BLAETTER: Record<string, string[]> = {
   ],
   Buchungen: ['id', 'konto', 'datum', 'betrag_ct', 'gegenseite', 'zweck', 'markierung', 'beleg_id', 'notiz', 'markiert_von', 'markiert_am'],
   // ab M8: Bescheid-Abgleich (E12); Zeile mit id „kopf“ = Bescheiddatum und Einspruchsfrist
+  // ab S1: Antworten des Erklärungs-Assistenten (id = Frage-Id)
+  Erklaerung: ['id', 'wert', 'notiz', 'geaendert_von', 'geaendert_am'],
   Bescheid: ['id', 'bezeichnung', 'modul', 'erklaerung_ct', 'bescheid_ct', 'notiz', 'bescheiddatum', 'einspruchsfrist', 'geaendert_von', 'geaendert_am'],
 }
 
