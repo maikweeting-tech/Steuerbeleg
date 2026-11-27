@@ -10,6 +10,7 @@ import {
 } from '../fachlich/objekte'
 import { formatDatum, formatEuro, parseBetrag, parseDatum } from '../fachlich/format'
 import { istAngemeldet } from '../google/auth'
+import ObjektDokumente from '../komponenten/ObjektDokumente'
 
 const konfig = KONFIGURATIONEN[AKTUELLES_JAHR]
 const vModul = konfig.module.find((m) => m.ebene === 'objekt')
@@ -46,6 +47,7 @@ export default function ObjektSeite() {
     <>
       <p><Link to="/objekte">← Objekte</Link></p>
       <h2 style={{ fontSize: '1.15rem' }}>{objekt.bezeichnung}</h2>
+      <ObjektDokumente objektId={id} />
 
       <div className="karte">
         <h2>Übersicht {AKTUELLES_JAHR}</h2>

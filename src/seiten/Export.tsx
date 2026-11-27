@@ -7,6 +7,7 @@ import { useDaten, useStamm } from '../komponenten/hooks'
 import { formatEuro } from '../fachlich/format'
 import { istAngemeldet } from '../google/auth'
 import { ladeInhalt } from '../google/drive'
+import { ladeDokumente } from '../daten/dokumentablage'
 import { fragen, gesamt, HINWEIS, type ExportDaten } from '../export/auswertung'
 
 const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -43,6 +44,7 @@ export default function Export() {
   const daten = async (): Promise<ExportDaten> => ({
     jahr: AKTUELLES_JAHR, konfig: KONFIGURATIONEN[AKTUELLES_JAHR], belege, stamm,
     vorjahr: online ? await ladeVorjahr(AKTUELLES_JAHR) : null, erstellt: new Date().toISOString(),
+    dokumente: online ? await ladeDokumente().catch(() => undefined) : undefined,
   })
   const excel = async (d: ExportDaten) => {
     const [{ default: ExcelJS }, { erstelleExcel }] = await Promise.all([import('exceljs'), import('../export/excel')])
