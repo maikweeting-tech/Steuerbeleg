@@ -2,10 +2,10 @@ import { useCallback, useEffect, useState } from 'react'
 import { abmelden, holeNutzer, istAngemeldet, letzterAnmeldeFehler, starteAnmeldung, stilleAnmeldungMoeglich, type Nutzer } from '../google/auth'
 import { fehlendeKennungen } from '../google/umgebung'
 import { richteEin, sucheWurzel, speichereWurzel, type Ergebnis } from '../daten/einrichtung'
-import { kinder, type DriveDatei } from '../google/drive'
+import { findeWurzeln, kinder, type DriveDatei } from '../google/drive'
 import { KONFIGURATIONEN, AKTUELLES_JAHR } from '../konfig'
 import { belegindexName } from '../daten/schema'
-import { starteSync } from '../daten/dienste'
+import { aktualisiereBelege, starteSync } from '../daten/dienste'
 import { GrosseKnoepfe } from '../komponenten/Schnellerfassung'
 import { useDaten } from '../komponenten/hooks'
 import { Link } from 'react-router-dom'
@@ -21,8 +21,17 @@ export default function Start() {
   const [ergebnis, setErgebnis] = useState<Ergebnis | null>(null)
   const [pruefung, setPruefung] = useState<string[] | null>(null)
   const [meldung, setMeldung] = useState('')
+  const [fremde, setFremde] = useState<DriveDatei[]>([])
   const fehlend = fehlendeKennungen()
   const { wartend, belege } = useDaten(konfig.steuerjahr)
+
+  // Eigener Ordner verbunden, obwohl ein anderer einen „Steuer“-Ordner freigegeben hat? → Hinweis zum Wechseln
+  useEffect(() => {
+    if (!wurzel?.ownedByMe) { setFremde([]); return }
+    let aktiv = true
+    findeWurzeln().then((l) => { if (aktiv) setFremde(l.filter((d) => !d.ownedByMe)) }).catch(() => undefined)
+    return () => { aktiv = false }
+  }, [wurzel])
 
   const aufgabe = useCallback(async (titel: string, f: () => Promise<void>) => {
     setFehler('')
@@ -89,7 +98,23 @@ export default function Start() {
               Verbunden: <a href={wurzel.webViewLink} target="_blank" rel="noreferrer">{wurzel.name}</a>{' '}
               <span className="klein">(Eigentümer: {wurzel.ownedByMe ? 'ich' : wurzel.owners?.[0]?.displayName ?? wurzel.owners?.[0]?.emailAddress ?? 'unbekannt'})</span>
             </p>
-          ) : kandidaten.length ? (
+          ) : null}
+          {wurzel && fremde.length > 0 && (
+            <div className="warnung">
+              <strong>Achtung:</strong> Du nutzt deinen eigenen Ordner „Steuer“. Es gibt aber einen freigegebenen Ordner
+              {fremde.length > 1 ? ' (mehrere)' : ''}. Für die gemeinsame Belegsammlung bitte wechseln:
+              <div className="zeile" style={{ marginTop: 6 }}>
+                {fremde.map((k) => (
+                  <button key={k.id} disabled={!!laeuft} onClick={() => aufgabe('Wechsle Ordner …', async () => {
+                    speichereWurzel(k.id); setWurzel(k); setFremde([])
+                    await aktualisiereBelege(konfig.steuerjahr).catch(() => undefined)
+                    setMeldung('Ordner gewechselt. Belege und Objekte kommen jetzt aus dem gemeinsamen Ordner.')
+                  })}>Ordner von {k.owners?.[0]?.displayName ?? k.owners?.[0]?.emailAddress ?? 'anderer Person'} nutzen</button>
+                ))}
+              </div>
+            </div>
+          )}
+          {wurzel ? null : kandidaten.length ? (
             <>
               <p>Es gibt mehrere Ordner „Steuer“. Bitte den gemeinsamen auswählen:</p>
               <ul className="liste">

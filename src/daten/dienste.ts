@@ -9,7 +9,7 @@ import { findeIndex, ladeBelege, synchronisiere, type SyncDienste, type SyncErge
 import {
   LEER, stammAus, zeileAusArbeitstage, zeileAusEinheit, zeileAusEinnahme, zeileAusFahrt, zeileAusKind, zeileAusObjekt, type Stamm,
 } from './stamm'
-import { aendereBeleg } from './bearbeiten'
+import { aendereBeleg, erledigeAuftraege } from './bearbeiten'
 import type { Beleg, BelegEntwurf } from '../fachlich/beleg'
 import type { Arbeitstage, Fahrt, Kind } from '../fachlich/personen'
 import { ordnerName } from '../fachlich/konfiguration'
@@ -48,7 +48,11 @@ export async function starteSync(): Promise<SyncErgebnis | null> {
       cacheSchreiben: belegCache.schreibe,
     })
     // Lokale Kopie von Belegindex und Objekten auffrischen (für Offline-Erfassung und Duplikate)
-    if (gespeicherteWurzel()) await aktualisiereBelege(AKTUELLES_JAHR).catch(() => undefined)
+    if (gespeicherteWurzel()) {
+      // PDFs verschieben, die eine andere Person geändert hat, aber nur der Eigentümer verschieben darf
+      await erledigeAuftraegeOnline(AKTUELLES_JAHR).catch(() => undefined)
+      await aktualisiereBelege(AKTUELLES_JAHR).catch(() => undefined)
+    }
     return syncStatus.letztes
   } finally {
     syncStatus.laeuft = false
@@ -72,7 +76,7 @@ export function automatischerSync() {
 // ---------------------------------------------------------------- Stammdaten Anlage V (online)
 
 
-const STAMM_BLAETTER = ['Objekte', 'Einheiten', 'Einnahmen', 'Aufteilung', 'Kinder', 'Fahrten', 'Arbeitstage']
+const STAMM_BLAETTER = ['Objekte', 'Einheiten', 'Einnahmen', 'Aufteilung', 'Kinder', 'Fahrten', 'Arbeitstage', 'Auftraege']
 
 export async function ladeStamm(jahr: number): Promise<Stamm> {
   const { indexId } = await findeIndex(jahr, dienste)
@@ -135,7 +139,7 @@ export const stammCache = {
 // ---------------------------------------------------------------- ab M4
 
 /** E14: Beleg ändern (online). Danach Belegindex und Stammdaten neu laden. */
-export async function aendereBelegOnline(jahr: number, alt: Beleg, neu: BelegEntwurf): Promise<Beleg> {
+export async function aendereBelegOnline(jahr: number, alt: Beleg, neu: BelegEntwurf): Promise<Beleg & { pdfOffen?: boolean }> {
   const { indexId, ordnerId } = await findeIndex(jahr, dienste)
   const stamm = await ladeStamm(jahr)
   const b = await aendereBeleg(alt, neu, {
@@ -174,4 +178,12 @@ export async function speichereArbeitstage(jahr: number, a: Arbeitstage) {
   if (!(await ersetzeZeile(indexId, 'Arbeitstage', a.person, zeileAusArbeitstage(a)))) await haengeAn(indexId, 'Arbeitstage', [zeileAusArbeitstage(a)])
   await protokoll(indexId, 'arbeitstage gespeichert', a.person, `${a.arbeitstage} AT, ${a.homeoffice_tage} HO, ${a.entfernung_km ?? '–'} km`)
   return ladeStamm(jahr)
+}
+
+/** Offene Verschiebe-Aufträge erledigen, soweit dieses Konto die PDFs verschieben darf. */
+export async function erledigeAuftraegeOnline(jahr: number): Promise<number> {
+  const { indexId, ordnerId } = await findeIndex(jahr, dienste)
+  const zeilen = await leseBlatt(indexId, 'Auftraege').catch(() => [])
+  if (!zeilen.some((z) => z[0] && !z[8])) return 0
+  return erledigeAuftraege({ indexId, ordnerId, jetzt: () => new Date().toISOString(), leseBlatt: async () => zeilen, ersetzeZeile, holeOderErstellePfad, verschiebeDatei })
 }

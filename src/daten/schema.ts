@@ -24,6 +24,8 @@ export const BLAETTER: Record<string, string[]> = {
   Arbeitstage: ['person', 'jahr', 'entfernung_km', 'arbeitstage', 'homeoffice_tage'],
   Protokoll: ['zeit', 'nutzer', 'aktion', 'beleg_id', 'feld', 'alt', 'neu'],
   Zuordnungen: ['aussteller', 'modul', 'kategorie', 'objekt_id', 'person', 'zuletzt'],
+  // ab M4: Aufträge an den Eigentümer einer PDF (Verschieben darf bei Google meist nur der Eigentümer)
+  Auftraege: ['id', 'art', 'beleg_id', 'datei_id', 'ziel_pfad', 'name', 'angelegt_von', 'angelegt_am', 'erledigt_am'],
 }
 
 export const belegindexName = (jahr: number) => `00_Belegindex_${jahr}`

@@ -84,9 +84,11 @@ export interface Stamm {
   kinder: Kind[]
   fahrten: Fahrt[]
   arbeitstage: Arbeitstage[]
+  /** offene Verschiebe-Aufträge (beleg_id) */
+  pdfOffen: string[]
 }
 
-export const LEER: Stamm = { objekte: [], einheiten: [], einnahmen: [], aufteilung: [], kinder: [], fahrten: [], arbeitstage: [] }
+export const LEER: Stamm = { objekte: [], einheiten: [], einnahmen: [], aufteilung: [], kinder: [], fahrten: [], arbeitstage: [], pdfOffen: [] }
 
 export function stammAus(blaetter: Record<string, Zeile[]>): Stamm {
   const voll = (l: Zeile[] | undefined) => (l ?? []).filter((z) => z[0] !== undefined && z[0] !== '')
@@ -98,5 +100,6 @@ export function stammAus(blaetter: Record<string, Zeile[]>): Stamm {
     kinder: voll(blaetter.Kinder).map(kindAusZeile),
     fahrten: voll(blaetter.Fahrten).map(fahrtAusZeile),
     arbeitstage: voll(blaetter.Arbeitstage).map(arbeitstageAusZeile),
+    pdfOffen: voll(blaetter.Auftraege).filter((z) => !z[8]).map((z) => String(z[2] ?? '')),
   }
 }

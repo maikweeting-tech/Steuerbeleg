@@ -115,17 +115,19 @@ export async function holeOderErstellePfad(pfad: string[], elternId: string): Pr
 
 /**
  * Benennt eine Datei um und verschiebt sie in einen anderen Ordner (nur wenn nötig).
- * Wirft eine verständliche Meldung, wenn Google das Verschieben nicht erlaubt
- * (z. B. Datei gehört einer anderen Person).
+ * Darf das Konto die Datei nicht verschieben/umbenennen (z. B. gehört sie einer anderen Person,
+ * Regel von Google für „Meine Ablage“), wird das Erlaubte erledigt und offen = true zurückgegeben.
  */
-export async function verschiebeDatei(id: string, name: string, neuerOrdnerId: string): Promise<DriveDatei> {
+export async function verschiebeDatei(id: string, name: string, neuerOrdnerId: string): Promise<{ id: string; name: string; offen: boolean }> {
   const info: { name: string; parents?: string[]; capabilities?: { canRename?: boolean; canMoveItemWithinDrive?: boolean } } =
     await googleFetch(`${DRIVE}/${encodeURIComponent(id)}?fields=name,parents,capabilities(canRename,canMoveItemWithinDrive)&supportsAllDrives=true`)
   const alt = info.parents ?? []
-  const verschieben = !alt.includes(neuerOrdnerId)
-  if (info.name !== name && info.capabilities?.canRename === false) throw new Error('Die PDF darf mit deinem Konto nicht umbenannt werden. Bitte die Person, der die Datei gehört, die Änderung machen lassen.')
-  if (verschieben && info.capabilities?.canMoveItemWithinDrive === false) throw new Error('Die PDF darf mit deinem Konto nicht verschoben werden (sie gehört einer anderen Person). Bitte die Person, die den Beleg erfasst hat, die Änderung machen lassen.')
-  const p = new URLSearchParams({ supportsAllDrives: 'true', fields: FELDER })
+  const umbenennen = info.name !== name && info.capabilities?.canRename !== false
+  const verschieben = !alt.includes(neuerOrdnerId) && info.capabilities?.canMoveItemWithinDrive !== false
+  const offen = (info.name !== name && !umbenennen) || (!alt.includes(neuerOrdnerId) && !verschieben)
+  if (!umbenennen && !verschieben) return { id, name: info.name, offen }
+  const p = new URLSearchParams({ supportsAllDrives: 'true', fields: 'id,name' })
   if (verschieben) { p.set('addParents', neuerOrdnerId); if (alt.length) p.set('removeParents', alt.join(',')) }
-  return googleFetch(`${DRIVE}/${encodeURIComponent(id)}?${p}`, { method: 'PATCH', body: JSON.stringify({ name }) })
+  const d: { id: string; name: string } = await googleFetch(`${DRIVE}/${encodeURIComponent(id)}?${p}`, { method: 'PATCH', body: JSON.stringify(umbenennen ? { name } : {}) })
+  return { id: d.id, name: d.name, offen }
 }
