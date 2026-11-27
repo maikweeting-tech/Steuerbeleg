@@ -27,6 +27,8 @@ export interface Frage {
   zeigen?: (a: Antworten) => boolean
   /** Berechneter Hinweis aus den Antworten (z. B. Kind wird 25); leer = kein Hinweis */
   pruefe?: (a: Antworten) => string
+  /** Info aus den App-Daten (z. B. Summe der erfassten Belege); nur Anzeige, kein Klärungspunkt */
+  info?: string
 }
 
 export interface Bereich {
@@ -91,8 +93,22 @@ export interface Kontext {
   objekte: { id: string; bezeichnung: string; anschaffungsdatum: string }[]
   /** Einnahmen (Miete, Nebenkosten) je Objekt im Steuerjahr in Cent */
   einnahmenCt: Record<string, number>
+  /** Belege je „Modul|Kategorie“ im Steuerjahr */
+  belegSummen?: Record<string, { anzahl: number; summe_ct: number }>
+  /** Anzahl bar bezahlter § 35a-Belege */
+  bar35a?: number
 }
 const LEERER_KONTEXT: Kontext = { objekte: [], einnahmenCt: {} }
+
+/** Summen der Belege je „Modul|Kategorie“ und Barzahlungen § 35a. */
+export function belegKontext(belege: { modul: string; kategorie: string; betrag_ct: number | null; zahlungsart?: string }[]): Pick<Kontext, 'belegSummen' | 'bar35a'> {
+  const r: Record<string, { anzahl: number; summe_ct: number }> = {}
+  for (const b of belege) {
+    const k = `${b.modul}|${b.kategorie}`
+    r[k] = { anzahl: (r[k]?.anzahl ?? 0) + 1, summe_ct: (r[k]?.summe_ct ?? 0) + (b.betrag_ct ?? 0) }
+  }
+  return { belegSummen: r, bar35a: belege.filter((b) => b.modul === '35A' && b.zahlungsart === 'bar').length }
+}
 
 const zahl = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
@@ -143,6 +159,24 @@ function objektFragen(jahr: number, o: Kontext['objekte'][number], ct: number | 
     w({ id: `${k}_kauf`, frage: `${n}: Wurde das Objekt ${jahr} gekauft, verkauft oder umgebaut (Anbau, Ausbau)?`, erklaerung: 'Dann ändert sich die Abschreibung (AfA). Die App rechnet keine AfA, die Steuerberatung braucht die Verträge.',
       unterlage: { name: `${n}: Kauf-/Verkaufsvertrag bzw. Bauunterlagen` }, hinweis: { wert: 'ja', text: `${n}: Kauf/Verkauf/Umbau – AfA und ggf. Spekulationsfrist mit der Steuerberatung klären.` } }),
   ]
+}
+
+/** Kontext aus App-Daten: aktive Objekte, Einnahmen je Objekt, Belegsummen. */
+export function kontextAus(
+  jahr: number,
+  objekte: { id: string; bezeichnung: string; anschaffungsdatum: string; aktiv: boolean }[],
+  einnahmen: { objekt_id: string; monat: string; betrag_ct: number }[],
+  belege: Parameters<typeof belegKontext>[0],
+): Kontext {
+  return { objekte: objekte.filter((o) => o.aktiv), einnahmenCt: einnahmenJeObjekt(jahr, einnahmen), ...belegKontext(belege) }
+}
+
+/** Info-Zeile „In der App erfasst: n Belege, x €“ für eine oder mehrere Kategorien. */
+function belegInfo(kx: Kontext, ...schluessel: string[]): string | undefined {
+  const l = schluessel.map((s) => kx.belegSummen?.[s]).filter((x): x is { anzahl: number; summe_ct: number } => !!x)
+  if (!l.length) return undefined
+  const n = l.reduce((s, x) => s + x.anzahl, 0), ct = l.reduce((s, x) => s + x.summe_ct, 0)
+  return `In der App erfasst: ${n} Beleg(e), zusammen ${zahl.format(ct / 100)} € (prüfen).`
 }
 
 /** Fragenkatalog. jahr wird in Texte eingesetzt; Antworten und App-Daten steuern Fragen je Kind und je Objekt. */
@@ -271,7 +305,52 @@ export function bereiche(jahr: number, a: Antworten = {}, kx: Kontext = LEERER_K
         ...kx.objekte.flatMap((o) => objektFragen(jahr, o, kx.einnahmenCt[o.id], a)),
       ],
     },
-    { id: 'ausgaben', name: 'Vorsorge, Belastungen, Haushalt', beschreibung: 'Sonderausgaben, außergewöhnliche Belastungen, § 35a. Folgt in S4.', fragen: [], folgt: true },
+    {
+      id: 'vorsorge', name: 'Vorsorge und Sonderausgaben', beschreibung: 'Versicherungen, Altersvorsorge, Spenden, Kirchensteuer.',
+      fragen: [
+        JN('sa_kv', `Habt ihr ${jahr} selbst Beiträge zur Kranken-/Pflegeversicherung gezahlt (nicht über Lohn oder Rente)?`, 'Beiträge, die Arbeitgeber oder Rentenkasse abziehen, kennt das Finanzamt schon. Hier geht es um selbst überwiesene Beiträge, z. B. freiwillige Versicherung oder Zusatzversicherungen.',
+          { formular: 'Anlage Vorsorgeaufwand', unterlage: { name: `Beitragsbescheinigungen Kranken-/Pflegeversicherung ${jahr}` }, info: belegInfo(kx, 'SA|kv_pv') }),
+        JN('sa_erstattung', `Gab es ${jahr} Beitragsrückerstattungen oder Bonuszahlungen der Krankenkasse?`, 'Erstattungen mindern die abziehbaren Beiträge. Bonusprogramme werden zum Teil anders behandelt (prüfen).',
+          { formular: 'Anlage Vorsorgeaufwand', unterlage: { name: 'Mitteilung der Krankenkasse über Erstattungen/Bonus' } }),
+        JN('sa_altersvorsorge', 'Zahlt jemand in einen Riester- oder Rürup-Vertrag ein?', 'Dafür kommt jedes Jahr eine Bescheinigung vom Anbieter. Die Steuerberatung entscheidet, wie sie berücksichtigt wird.',
+          { formular: 'Anlage AV bzw. Vorsorgeaufwand', unterlage: { name: `Bescheinigungen Riester/Rürup ${jahr}` }, info: belegInfo(kx, 'SA|altersvorsorge') }),
+        JN('sa_versicherungen', 'Habt ihr weitere Versicherungen bezahlt (Haftpflicht, Unfall, Risikolebens-, Berufsunfähigkeitsversicherung)?', 'Diese zählen zu den sonstigen Vorsorgeaufwendungen; oft wirken sie wegen Höchstbeträgen nicht mehr (prüfen). Hausrat und Rechtsschutz gehören in der Regel nicht dazu.',
+          { formular: 'Anlage Vorsorgeaufwand', unterlage: { name: 'Beitragsübersicht weitere Versicherungen' }, info: belegInfo(kx, 'SA|haftpflicht') }),
+        JN('sa_spenden', `Habt ihr ${jahr} gespendet oder Mitgliedsbeiträge an gemeinnützige Vereine oder Parteien gezahlt?`, 'Für kleinere Spenden reicht oft der Kontoauszug, sonst eine Zuwendungsbestätigung (Grenze prüfen).',
+          { formular: 'Hauptvordruck, Sonderausgaben', unterlage: { name: 'Zuwendungsbestätigungen / Kontoauszüge Spenden' }, info: belegInfo(kx, 'SA|spenden') }),
+        JN('sa_kirchensteuer', `Habt ihr ${jahr} Kirchensteuer direkt ans Finanzamt gezahlt oder erstattet bekommen?`, 'Kirchensteuer über den Lohn kennt das Finanzamt. Hier geht es um Nachzahlungen oder Erstattungen laut Steuerbescheid.',
+          { formular: 'Hauptvordruck, Sonderausgaben', info: belegInfo(kx, 'SA|kirchensteuer') }),
+        JN('sa_unterhalt', 'Habt ihr Unterhalt an einen früheren Ehegatten oder an bedürftige Angehörige gezahlt (nicht an eigene Kinder mit Kindergeld)?', 'Dafür gibt es eigene Regeln und Anlagen (prüfen).',
+          { formular: 'Anlage U bzw. Anlage Unterhalt', hinweis: { wert: 'ja', text: 'Unterhaltszahlungen mit der Steuerberatung klären.' }, unterlage: { name: 'Nachweise Unterhaltszahlungen' } }),
+      ],
+    },
+    {
+      id: 'agb', name: 'Außergewöhnliche Belastungen', beschreibung: 'Krankheit, Pflege, Bestattung. Zählen nur über der zumutbaren Belastung (prüfen).',
+      fragen: [
+        JN('agb_krankheit', `Habt ihr ${jahr} Krankheitskosten selbst bezahlt?`, 'Zum Beispiel Zuzahlungen, Brille, Zahnersatz, Medikamente auf Rezept, Fahrten zur Behandlung. Erstattungen der Kasse oder Beihilfe abziehen. Es zählt nur der Teil über der zumutbaren Belastung (prüfen).',
+          { formular: 'Anlage Außergewöhnliche Belastungen', unterlage: { name: 'Rechnungen Krankheitskosten + Erstattungen der Kasse' }, info: belegInfo(kx, 'AGB|krankheitskosten') }),
+        JN('agb_pflege', `Habt ihr ${jahr} Pflege- oder Heimkosten bezahlt (für euch oder Angehörige)?`, 'Leistungen der Pflegekasse werden abgezogen. Der Pflege-Pauschbetrag (Hauptvordruck) und tatsächliche Kosten schließen sich teilweise aus (prüfen).',
+          { formular: 'Anlage Außergewöhnliche Belastungen', unterlage: { name: 'Rechnungen Pflege/Heim + Bescheide Pflegekasse' }, info: belegInfo(kx, 'AGB|pflegekosten') }),
+        JN('agb_bestattung', `Habt ihr ${jahr} Bestattungskosten getragen?`, 'Zählt nur, soweit der Nachlass und Versicherungsleistungen die Kosten nicht decken (prüfen).',
+          { formular: 'Anlage Außergewöhnliche Belastungen', unterlage: { name: 'Rechnungen Bestattung + Nachweis Nachlass' }, info: belegInfo(kx, 'AGB|bestattung'), hinweis: { wert: 'ja', text: 'Bestattungskosten: Nachlass und Erstattungen mit der Steuerberatung klären.' } }),
+        JN('agb_sonstige', `Gab es ${jahr} sonstige besondere Kosten (z. B. Schäden durch Unwetter, Hochwasser, Brand; behinderungsbedingter Umbau)?`, 'Nur wenn sie zwangsläufig waren und nicht von einer Versicherung bezahlt wurden (prüfen).',
+          { formular: 'Anlage Außergewöhnliche Belastungen', unterlage: { name: 'Rechnungen und Versicherungsabrechnung' }, info: belegInfo(kx, 'AGB|sonstige_agb'), hinweis: { wert: 'ja', text: 'Sonstige außergewöhnliche Belastungen mit der Steuerberatung klären.' } }),
+      ],
+    },
+    {
+      id: 'haushalt', name: 'Haushalt und Handwerker (§ 35a)', beschreibung: 'Haushaltsnahe Dienstleistungen und Handwerker in der selbst genutzten Wohnung.',
+      fragen: [
+        JN('h35_haushaltsnah', `Habt ihr ${jahr} für Reinigung, Gartenpflege, Winterdienst oder ähnliche Dienste im eigenen Haushalt bezahlt?`, 'Begünstigt sind nur die Arbeitskosten (nicht Material), bezahlt per Überweisung. Höchstbeträge prüfen.',
+          { formular: 'Hauptvordruck, § 35a', unterlage: { name: 'Rechnungen haushaltsnahe Dienstleistungen + Zahlungsnachweise' }, info: belegInfo(kx, '35A|haushaltsnah') }),
+        JN('h35_handwerker', `Gab es ${jahr} Handwerkerarbeiten in eurer selbst genutzten Wohnung (Reparatur, Wartung, Schornsteinfeger)?`, 'Nur die selbst genutzte Wohnung, nicht vermietete Objekte (die gehören zu Anlage V). Arbeitskosten getrennt auf der Rechnung, unbar bezahlt.',
+          { formular: 'Hauptvordruck, § 35a', unterlage: { name: 'Handwerkerrechnungen + Zahlungsnachweise' }, info: belegInfo(kx, '35A|handwerker'),
+            pruefe: () => (kx.bar35a ?? 0) > 0 ? `${kx.bar35a} § 35a-Beleg(e) in der App sind bar bezahlt – in der Regel nicht begünstigt (prüfen).` : '' }),
+        JN('h35_nebenkosten', 'Gibt es für eure selbst genutzte Wohnung eine Nebenkosten- oder Hausgeldabrechnung mit Ausweis nach § 35a?', 'Auch Mieter können Anteile für Hausmeister, Treppenhausreinigung oder Gartenpflege aus der Nebenkostenabrechnung ansetzen.',
+          { formular: 'Hauptvordruck, § 35a', unterlage: { name: 'Nebenkosten-/Hausgeldabrechnung mit § 35a-Ausweis' } }),
+        JN('h35_minijob', 'Habt ihr eine Haushaltshilfe als Minijob angemeldet (Haushaltsscheck)?', 'Die Minijob-Zentrale schickt eine Jahresbescheinigung.',
+          { formular: 'Hauptvordruck, § 35a', unterlage: { name: 'Bescheinigung der Minijob-Zentrale' }, info: belegInfo(kx, '35A|minijob') }),
+      ],
+    },
   ]
 }
 

@@ -10,13 +10,14 @@ import { ladeInhalt } from '../google/drive'
 import { fragen, gesamt, HINWEIS, type ExportDaten } from '../export/auswertung'
 
 const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-type Art = 'excel' | 'checkliste' | 'fragen' | 'mappe' | 'zip'
+type Art = 'erklaerung' | 'excel' | 'checkliste' | 'fragen' | 'mappe' | 'zip'
 const ARTEN: { id: Art; name: string; text: string; drive: boolean }[] = [
+  { id: 'erklaerung', name: 'Ausfüllhilfe für die Steuerberatung (PDF)', text: 'Antworten aus „Erklärung“, Unterlagenliste und Punkte zum Klären.', drive: false },
   { id: 'excel', name: 'Excel-Auswertung', text: 'Summen mit Formeln je Anlage, Prüfblatt, Annahmen, alle Belege.', drive: false },
   { id: 'checkliste', name: 'Checkliste (PDF)', text: 'Offene Punkte, Summen je Bereich, Anlage V, § 35a, Fragen.', drive: false },
   { id: 'fragen', name: 'Fragenliste (PDF)', text: 'Alle Belege mit Frage an die Steuerberatung.', drive: false },
   { id: 'mappe', name: 'Belegmappe (PDF)', text: 'Deckblatt, Verzeichnis und alle Belege mit Stempel in einer Datei. Lädt alle Dateien aus Drive.', drive: true },
-  { id: 'zip', name: 'ZIP-Paket', text: 'Alle Belegdateien in Ordnern wie in Drive, dazu Excel, Checkliste und Fragenliste.', drive: true },
+  { id: 'zip', name: 'ZIP-Paket', text: 'Alle Belegdateien in Ordnern wie in Drive, dazu Excel, Checkliste, Ausfüllhilfe und Fragenliste.', drive: true },
 ]
 
 const stempel = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}_${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}`
@@ -59,7 +60,9 @@ export default function Export() {
       const cache = new Map<string, ReturnType<typeof ladeInhalt>>()
       const lade = (id: string) => { if (!cache.has(id)) cache.set(id, ladeInhalt(id)); return cache.get(id)! }
       const melde = (n: number, g: number) => setStand(`Belegdateien laden: ${n} von ${g}`)
-      if (art === 'excel') {
+      if (art === 'erklaerung') {
+        setErgebnis({ blob: await pdf.erklaerungPdf(d), name: `${basis}_Ausfuellhilfe_${zeit}.pdf`, mime: 'application/pdf', hinweise: [] })
+      } else if (art === 'excel') {
         setStand('Excel erstellen …')
         setErgebnis({ blob: new Blob([await excel(d) as BlobPart], { type: XLSX }), name: `${basis}_Auswertung_${zeit}.xlsx`, mime: XLSX, hinweise: [] })
       } else if (art === 'checkliste') {
@@ -74,6 +77,7 @@ export default function Export() {
         const zusatz: Record<string, Uint8Array> = {
           [`${basis}_Auswertung.xlsx`]: await excel(d),
           [`${basis}_Checkliste.pdf`]: new Uint8Array(await (await pdf.checklistePdf(d)).arrayBuffer()),
+          [`${basis}_Ausfuellhilfe.pdf`]: new Uint8Array(await (await pdf.erklaerungPdf(d)).arrayBuffer()),
         }
         if (fragen(d).length) zusatz[`${basis}_Fragen.pdf`] = new Uint8Array(await (await pdf.fragenPdf(d)).arrayBuffer())
         const { erstellePaket } = await import('../export/paket')
@@ -108,7 +112,7 @@ export default function Export() {
         <div key={a.id} className="karte">
           <h2>{a.name}</h2>
           <p className="klein">{a.text}</p>
-          <button disabled={laeuft !== null || (a.drive && !online) || !belege.length} onClick={() => void erstelle(a.id)}>{laeuft === a.id ? 'Erstelle …' : 'Erstellen'}</button>
+          <button disabled={laeuft !== null || (a.drive && !online) || (a.id !== 'erklaerung' && !belege.length)} onClick={() => void erstelle(a.id)}>{laeuft === a.id ? 'Erstelle …' : 'Erstellen'}</button>
           {a.drive && !online && <p className="klein">Nur angemeldet und mit Netz (Dateien kommen aus Drive).</p>}
         </div>
       ))}

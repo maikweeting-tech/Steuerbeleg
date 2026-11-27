@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { PDFDocument, StandardFonts } from 'pdf-lib'
 import { describe, expect, it } from 'vitest'
-import { belegmappePdf, checklistePdf, fragenPdf, mappenReihenfolge, saeubere } from '../src/export/pdf'
+import { belegmappePdf, checklistePdf, erklaerungPdf, fragenPdf, mappenReihenfolge, saeubere } from '../src/export/pdf'
 import { testDaten } from './hilfen/exportDaten'
 
 const pdftotext = existsSync('/usr/bin/pdftotext')
@@ -100,5 +100,25 @@ describe('PDF-Exporte', () => {
     expect(sd).toContain('Nr. 4')
     // Folgeseite des Dauerbelegs trägt ebenfalls den Stempel
     expect(await seitenText(pdf, e3.seite! + vorne + 1)).toContain('DAUER Seite 2')
+  })
+
+  it.skipIf(!pdftotext)('Ausfüllhilfe: Klärungspunkte, Unterlagen, Antworten je Bereich (Testdaten)', async () => {
+    const d = testDaten()
+    d.stamm.antworten = {
+      allg_frist: { wert: 'vermutet', notiz: '' },
+      allg_bescheid_vorjahr: { wert: 'ja', notiz: 'liegt im Ordner' },
+      kinder_anzahl: { wert: '1', notiz: '' },
+      kind1_name: { wert: 'Testkind', notiz: '' },
+    }
+    const t = (await text(await erklaerungPdf(d))).replace(/\s+/g, ' ')
+    expect(t).toContain('Ausfüllhilfe Steuererklärung 2026')
+    expect(t).toContain('Mit der Steuerberatung klären (2)') // Frist + Barzahlung § 35a aus den Testbelegen
+    expect(t).toContain('bar bezahlt')
+    expect(t).toContain('Fristverlängerung')
+    expect(t).toContain('[ ] Steuerbescheid 2025')
+    expect(t).toContain('liegt im Ordner')
+    expect(t).toContain('Kind 1 (Testkind)')
+    expect(t).toContain('offen')
+    expect(t).toContain('keine Steuer berechnet')
   })
 })
