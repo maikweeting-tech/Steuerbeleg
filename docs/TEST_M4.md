@@ -19,7 +19,7 @@ Nach dem Merge ca. 2 Minuten warten. App **einmal schließen und neu öffnen** (
 | 12 | Maik, Handy | Erfassen: Modul **§ 35a**, Zahlungsart **bar** | Gelbe Warnung „Barzahlung …“ (Speichern bleibt möglich) |
 | 13 | Maik, Handy | § 35a: Betrag `1.000,00`, Arbeitskosten `600,00`, Material `300,00` | Rote Meldung „Arbeitskosten + Material = 900,00 € statt Betrag 1000,00 €“. Material auf `400,00` → Meldung weg |
 | 14 | Maik, Handy | Erfassen: Modul **Anlage KAP**, Kategorie Jahressteuerbescheinigung | Speichern geht, PDF in `KAP_Kapitalertraege/Jahressteuerbescheinigung/` |
-| 15 | Maik | „Info“-Seite | Neue Module agB und KAP mit Zeilen „prüfen“ |
+| 15 | Maik | „Info“-Seite | „9 Module“ (vorher 7). Im Erfassen-Formular sind agB und KAP auswählbar |
 
 Hinweise:
 - Beim Bearbeiten lässt sich das **Steuerjahr nicht ändern** (anderer Belegindex). Falls nötig: neu erfassen.
