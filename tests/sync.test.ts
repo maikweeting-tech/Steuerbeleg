@@ -89,7 +89,7 @@ describe('Synchronisierung', () => {
     const f = fakes({ ohneIndex: true })
     f.setze([wartend('a')])
     await synchronisiere(f.d, f.a)
-    expect(f.liste()[0].fehler).toMatch(/Struktur prüfen/)
+    expect(f.liste()[0].fehler).toMatch(/Jahr 2026 anlegen/)
   })
 })
 

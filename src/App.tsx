@@ -20,6 +20,7 @@ import { useDaten } from './komponenten/hooks'
 import { AKTUELLES_JAHR, JAHRE, waehleJahr } from './konfig'
 import { KameraKnopf } from './komponenten/Schnellerfassung'
 import UpdateHinweis from './komponenten/UpdateHinweis'
+import JahrAnlegen from './komponenten/JahrAnlegen'
 
 function Kamera() {
   const p = useLocation().pathname
@@ -65,6 +66,7 @@ export default function App() {
       </header>
       <main>
         <UpdateHinweis />
+        <JahrAnlegen />
         <Routes>
           <Route path="/" element={<Start />} />
           <Route path="/erfassen" element={<Erfassen />} />

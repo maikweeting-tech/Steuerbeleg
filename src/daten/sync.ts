@@ -43,9 +43,9 @@ export async function findeIndex(jahr: number, d: SyncDienste): Promise<{ indexI
   const wurzel = d.wurzelId()
   if (!wurzel) throw new SyncFehler('Kein Ordner „Steuer“ verbunden. Bitte auf „Start“ unter „2. Ordner Steuer“ den gemeinsamen Ordner verbinden.')
   const ordner = await d.findeOrdner(String(jahr), wurzel)
-  if (!ordner) throw new SyncFehler(`Ordner „Steuer/${jahr}“ fehlt. Bitte auf der Startseite „Struktur prüfen“.`)
+  if (!ordner) throw new SyncFehler(`Ordner „Steuer/${jahr}“ fehlt. Bitte oben auf „Jahr ${jahr} anlegen“ tippen (bzw. Start → „Struktur ${jahr} prüfen / ergänzen“).`)
   const index = await d.findeSheet(belegindexName(jahr), ordner.id)
-  if (!index) throw new SyncFehler(`${belegindexName(jahr)} fehlt. Bitte auf der Startseite „Struktur prüfen“.`)
+  if (!index) throw new SyncFehler(`${belegindexName(jahr)} fehlt. Bitte oben auf „Jahr ${jahr} anlegen“ tippen (bzw. Start → „Struktur ${jahr} prüfen / ergänzen“).`)
   return { indexId: index.id, ordnerId: ordner.id }
 }
 
