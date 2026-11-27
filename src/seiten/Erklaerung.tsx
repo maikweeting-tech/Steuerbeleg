@@ -6,19 +6,18 @@ import { speichereAntwort } from '../daten/dienste'
 import { useStamm } from '../komponenten/hooks'
 import { istAngemeldet } from '../google/auth'
 import {
-  anzeigeWert, bereiche, fortschritt, gesamtFortschritt, klaeren, naechsteOffene, passtWert, sichtbar, unterlagen, WEISS_NICHT,
-  type Antwort, type Bereich, type Frage,
+  anzeigeWert, bereiche, fortschritt, gesamtFortschritt, hinweisText, klaeren, naechsteOffene, sichtbar, unterlagen, WEISS_NICHT,
+  type Antwort, type Frage,
 } from '../fachlich/assistent'
 
 const JN = [{ wert: 'ja', name: 'Ja' }, { wert: 'nein', name: 'Nein' }, { wert: WEISS_NICHT, name: 'Weiß nicht' }]
 
-function FrageKarte({ f, a, aktiv, online, speichere }: { f: Frage; a?: Antwort; aktiv: boolean; online: boolean; speichere: (wert: string, notiz: string) => Promise<void> }) {
+function FrageKarte({ f, a, hinweis, aktiv, online, speichere }: { f: Frage; a?: Antwort; hinweis: string; aktiv: boolean; online: boolean; speichere: (wert: string, notiz: string) => Promise<void> }) {
   const [text, setText] = useState(a?.wert ?? '')
   const [notiz, setNotiz] = useState(a?.notiz ?? '')
   useEffect(() => { setText(a?.wert ?? ''); setNotiz(a?.notiz ?? '') }, [a])
   const wert = a?.wert ?? ''
   const optionen = f.typ === 'ja_nein' ? JN : f.optionen
-  const hinweis = f.hinweis && passtWert(wert, f.hinweis.wert) ? f.hinweis.text : ''
   return (
     <div className="karte" style={aktiv ? { outline: '2px solid var(--blau)' } : undefined}>
       <p><strong>{f.frage}</strong> {wert && <span className="ok">✓</span>}</p>
@@ -53,11 +52,12 @@ function FrageKarte({ f, a, aktiv, online, speichere }: { f: Frage; a?: Antwort;
 export default function Erklaerung() {
   const stamm = useStamm(AKTUELLES_JAHR)
   const online = istAngemeldet()
-  const liste = bereiche(AKTUELLES_JAHR)
-  const [offen, setOffen] = useState<Bereich | null>(null)
+  const a = stamm.antworten
+  const liste = bereiche(AKTUELLES_JAHR, a)
+  const [offenId, setOffenId] = useState<string | null>(null)
+  const offen = liste.find((b) => b.id === offenId) ?? null
   const [laeuft, setLaeuft] = useState(false)
   const [fehler, setFehler] = useState('')
-  const a = stamm.antworten
   const g = gesamtFortschritt(liste, a)
 
   const speichere = async (id: string, wert: string, notiz: string) => {
@@ -70,11 +70,11 @@ export default function Erklaerung() {
     const p = fortschritt(offen, a)
     return (
       <>
-        <button className="zweit" onClick={() => setOffen(null)}>← Alle Bereiche</button>
+        <button className="zweit" onClick={() => setOffenId(null)}>← Alle Bereiche</button>
         <h2 style={{ fontSize: '1.15rem' }}>{offen.name} {AKTUELLES_JAHR}</h2>
         <p className="klein">{offen.beschreibung} – {p.fertig} von {p.gesamt} beantwortet.</p>
         {offen.fragen.filter((f) => sichtbar(f, a)).map((f) => (
-          <FrageKarte key={f.id} f={f} a={a[f.id]} aktiv={naechste?.id === f.id} online={online && !laeuft} speichere={(w, n) => speichere(f.id, w, n)} />
+          <FrageKarte key={f.id} f={f} a={a[f.id]} hinweis={hinweisText(f, a)} aktiv={naechste?.id === f.id} online={online && !laeuft} speichere={(w, n) => speichere(f.id, w, n)} />
         ))}
         {!naechste && <p className="ok">Alle Fragen in diesem Bereich beantwortet.</p>}
         {laeuft && <p className="klein">Speichere …</p>}
@@ -101,7 +101,7 @@ export default function Erklaerung() {
             <p className="klein">{b.beschreibung}</p>
             {b.folgt ? <p className="klein">Kommt in einem der nächsten Schritte.</p> : (
               <div className="zeile">
-                <button className={p.offen ? '' : 'zweit'} onClick={() => setOffen(b)}>{p.offen ? `Weiter (${p.offen} offen)` : 'Ansehen'}</button>
+                <button className={p.offen ? '' : 'zweit'} onClick={() => setOffenId(b.id)}>{p.offen ? `Weiter (${p.offen} offen)` : 'Ansehen'}</button>
                 <span className={p.offen ? 'klein' : 'ok'}>{p.fertig} / {p.gesamt}</span>
               </div>
             )}
