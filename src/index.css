@@ -69,3 +69,11 @@ label.knopf.gross-foto > span { min-height: 56px; font-size: 1.1rem; font-weight
 a.klein-knopf { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; min-height: 36px; border: 1px solid var(--blau); border-radius: 6px; color: var(--blau); text-decoration: none; background: #fff; }
 .zaehler { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; }
 .zaehler .wert { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* M5: Vorschläge */
+.vorschlag { border-left: 4px solid #1f5f8b; padding: 8px 10px; }
+table.vorschlaege { border-collapse: collapse; margin: 6px 0; }
+table.vorschlaege td { padding: 3px 8px 3px 0; vertical-align: middle; }
+table.vorschlaege button { min-height: 30px; padding: 2px 10px; }
+pre.ocr-text { white-space: pre-wrap; font-size: 0.8rem; max-height: 240px; overflow: auto; background: #f4f4f4; padding: 6px; }
+@media (prefers-color-scheme: dark) { pre.ocr-text { background: #222; } }

@@ -21,6 +21,8 @@ interface Props {
   children?: ReactNode
   /** Steuerjahr nicht änderbar (Bearbeiten) */
   jahrFest?: boolean
+  /** wird erhöht, wenn Beträge von außen gesetzt werden (Vorschläge) – Eingabefelder neu befüllen */
+  stand?: number
 }
 
 const centText = (c: number | null) => (c === null ? '' : formatEuro(c).replace(/\s?€/, ''))
@@ -36,7 +38,7 @@ function Betrag({ label, wert, setze }: { label: string; wert: number | null; se
   )
 }
 
-export default function BelegFelder({ e, setE, betragText, setBetragText, zahlungGeaendert, setZahlungGeaendert, aussteller, stamm, children, jahrFest }: Props) {
+export default function BelegFelder({ e, setE, betragText, setBetragText, zahlungGeaendert, setZahlungGeaendert, aussteller, stamm, children, jahrFest, stand = 0 }: Props) {
   const konfig = KONFIGURATIONEN[AKTUELLES_JAHR]
   const setze = <K extends keyof BelegEntwurf>(k: K, v: BelegEntwurf[K]) => setE((a) => ({ ...a, [k]: v }))
   const modul = konfig.module.find((m) => m.id === e.modul)
@@ -112,8 +114,8 @@ export default function BelegFelder({ e, setE, betragText, setBetragText, zahlun
             </div>
           </fieldset>
           <div className="zeile">
-            <Betrag label="Arbeitskosten (€)" wert={e.arbeitskosten_ct} setze={(c) => setze('arbeitskosten_ct', c)} />
-            <Betrag label="Material (€)" wert={e.material_ct} setze={(c) => setze('material_ct', c)} />
+            <Betrag key={`ak${stand}`} label="Arbeitskosten (€)" wert={e.arbeitskosten_ct} setze={(c) => setze('arbeitskosten_ct', c)} />
+            <Betrag key={`ma${stand}`} label="Material (€)" wert={e.material_ct} setze={(c) => setze('material_ct', c)} />
           </div>
           <p className="klein">Beträge laut Rechnung (brutto). Arbeitskosten + Material müssen den Gesamtbetrag ergeben, wenn beide eingetragen sind.</p>
         </div>

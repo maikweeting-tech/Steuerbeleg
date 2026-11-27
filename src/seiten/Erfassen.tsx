@@ -1,6 +1,6 @@
 // Beleg erfassen: Seiten (Fotos/PDF) sammeln und bearbeiten, Pflichtfelder ausfüllen, speichern.
 // Gespeichert wird zuerst lokal (Warteschlange); die Übertragung nach Drive läuft danach automatisch.
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { AKTUELLES_JAHR, KONFIGURATIONEN } from '../konfig'
 import {
@@ -17,6 +17,9 @@ import BelegFelder from '../komponenten/BelegFelder'
 import Zuschnitt from '../komponenten/Zuschnitt'
 import { holeGeteilteDateien } from '../erfassung/teilen'
 import { nimmVorgemerkte } from '../erfassung/uebergabe'
+import { OCR_AUS, textAusBild, textAusPdf, type OcrStand } from '../erfassung/ocr'
+import { werteAus, zuordnungNachAussteller } from '../fachlich/texterkennung'
+import { AusstellerVorschlag, OcrVorschlaege } from '../komponenten/Vorschlaege'
 
 type Eintrag =
   | (Seite & { art: 'bild'; bildUrl: string })
@@ -37,7 +40,9 @@ export default function Erfassen() {
   const [versucht, setVersucht] = useState(false)
   const [laeuft, setLaeuft] = useState('')
   const [fehler, setFehler] = useState('')
-
+  const [ocr, setOcr] = useState<OcrStand>(OCR_AUS)
+  const [stand, setStand] = useState(0)
+  const ocrLauf = useRef(0)
 
   const fuegeHinzu = useCallback(async (dateien: File[] | Blob[]) => {
     setFehler('')
@@ -94,6 +99,39 @@ export default function Erfassen() {
   ]), [e, belege, wartend])
 
   const aussteller = useMemo(() => [...new Set(belege.map((b) => b.aussteller).filter(Boolean))].sort(), [belege])
+
+  // Texterkennung der ersten Seite (läuft im Hintergrund, Ergebnis nur als Vorschlag)
+  const erkenne = useCallback(async (s: Eintrag) => {
+    const lauf = ++ocrLauf.current
+    setOcr({ ...OCR_AUS, status: 'laeuft' })
+    const fort = (p: number) => { if (lauf === ocrLauf.current) setOcr((o) => ({ ...o, fortschritt: p })) }
+    try {
+      const text = s.art === 'pdf' ? await textAusPdf(s.datei, fort) : await textAusBild(await rendere(s), fort)
+      if (lauf === ocrLauf.current) setOcr({ ...OCR_AUS, status: 'fertig', text, vorschlag: werteAus(text, aussteller) })
+    } catch (x) {
+      if (lauf === ocrLauf.current) setOcr({ ...OCR_AUS, status: 'fehler', fehler: x instanceof Error ? x.message : String(x) })
+    }
+  }, [aussteller])
+  const erste = seiten[0]
+  useEffect(() => { if (erste && ocr.status === 'aus') void erkenne(erste) }, [erste, ocr.status, erkenne])
+
+  const uebernimm = (felder: string[]) => {
+    const v = ocr.vorschlag
+    if (!v) return
+    if (felder.includes('betrag') && v.betrag_ct !== null) setBetragText(formatEuro(v.betrag_ct).replace(/\s?€/, ''))
+    setE((a) => {
+      const n = { ...a }
+      if (felder.includes('datum') && v.belegdatum) { n.belegdatum = v.belegdatum; if (!zahlungGeaendert) n.zahlungsdatum = v.belegdatum }
+      if (felder.includes('betrag') && v.betrag_ct !== null) n.betrag_ct = v.betrag_ct
+      if (felder.includes('aussteller') && v.aussteller) n.aussteller = v.aussteller
+      if (felder.includes('lohn')) { n.arbeitskosten_ct = v.arbeitskosten_ct; n.material_ct = v.material_ct }
+      return n
+    })
+    if (felder.includes('lohn')) setStand((x) => x + 1)
+  }
+
+  const zuordnung = useMemo(() => zuordnungNachAussteller(e.aussteller, belege), [e.aussteller, belege])
+  const zuordnungOffen = !!zuordnung && (e.modul !== zuordnung.modul || e.kategorie !== zuordnung.kategorie || e.objekt_id !== zuordnung.objekt_id || e.kind_id !== zuordnung.kind_id)
 
   const speichere = async () => {
     setVersucht(true)
@@ -171,8 +209,16 @@ export default function Erfassen() {
 
       <div className="karte">
         <h2>2. Angaben</h2>
+        <OcrVorschlaege ocr={ocr} e={e} uebernimm={uebernimm} neuErkennen={erste ? () => void erkenne(erste) : undefined} />
         <BelegFelder e={e} setE={setE} betragText={betragText} setBetragText={setBetragText} zahlungGeaendert={zahlungGeaendert}
-          setZahlungGeaendert={setZahlungGeaendert} aussteller={aussteller} stamm={stamm}>
+          setZahlungGeaendert={setZahlungGeaendert} aussteller={aussteller} stamm={stamm} stand={stand}>
+          {zuordnung && zuordnungOffen && (
+            <AusstellerVorschlag z={zuordnung} stamm={stamm} uebernimm={() => setE((a) => ({
+              ...a, person: zuordnung.person, modul: zuordnung.modul, kategorie: zuordnung.kategorie, objekt_id: zuordnung.objekt_id,
+              einheit_id: zuordnung.einheit_id, umlagefaehig: zuordnung.umlagefaehig, kind_id: zuordnung.kind_id,
+              zahlungsart: zuordnung.zahlungsart, aufteilung: [],
+            }))} />
+          )}
           {duplikate.length > 0 && (
             <div className="warnung">
               <strong>Möglicherweise doppelt:</strong>

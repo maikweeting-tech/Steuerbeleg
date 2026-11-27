@@ -12,9 +12,11 @@
   },
   "dependencies": {
     "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.5.438",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.18.7",
+    "tesseract.js": "^7.0.0",
     "workbox-core": "^7.4.1",
     "workbox-precaching": "^7.4.1",
     "workbox-routing": "^7.4.1"
