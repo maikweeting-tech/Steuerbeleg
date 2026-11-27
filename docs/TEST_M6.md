@@ -20,7 +20,7 @@ Beim ersten Öffnen ergänzt die App im Belegindex die Blätter **Vorlagen** und
 | 12 | Anna, Handy | „Check“ öffnen | Sieht dieselben Vorlagen und roten/grünen Zeiträume wie Maik |
 
 Hinweise / Annahmen (prüfen):
-- **CSV-Formate** sind nach den bekannten Exporten nachgebaut (Sparkasse CSV-CAMT/MT940, Volksbank/Atruvia neu und alt mit S/H, ING, DKB, comdirect), nicht mit euren echten Dateien geprüft. Nicht erkannte Spalten lassen sich von Hand zuordnen.
+- **CSV-Formate** sind nach den bekannten Exporten nachgebaut (Sparkasse CSV-CAMT/MT940, Volksbank/Atruvia neu und alt mit S/H, ING, DKB, comdirect, Sparda-Bank), nicht mit euren echten Dateien geprüft. Nicht erkannte Spalten lassen sich von Hand zuordnen.
 - **Treffer** im Kontoauszug: gleicher Betrag und Datum ± 5 Tage (Zahlungs- oder Belegdatum). Sammelzahlungen oder Teilbeträge werden nicht erkannt.
 - Die CSV wird **nicht gespeichert**. Im Sheet stehen nur markierte Buchungen (Datum, Betrag, Empfänger, Verwendungszweck).
 - **Vollständigkeit**: ein Zeitraum gilt als erledigt, wenn ein Beleg mit gleichem Modul/Kategorie (und ggf. Aussteller, Person, Objekt) im Zeitraum bezahlt wurde oder aus der Vorlage bestätigt wurde. Rot = Zeitraum vorbei ohne Beleg. Vorlagen, die mitten im Jahr angelegt werden, zeigen frühere Monate rot – dann bestätigen oder Vorlage anpassen.

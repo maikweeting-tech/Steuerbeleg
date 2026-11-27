@@ -49,7 +49,7 @@ export default function Konto() {
     setFehler(''); setLaeuft(true)
     try { await markiereBuchung(AKTUELLES_JAHR, b, m) } catch (e) { setFehler(e instanceof Error ? e.message : String(e)) } finally { setLaeuft(false) }
   }
-  const erfassenLink = (b: Buchung) => `/erfassen?${new URLSearchParams({ betrag: String(Math.abs(b.betrag_ct)), datum: b.datum, aussteller: b.gegenseite })}`
+  const erfassenLink = (b: Buchung) => `/erfassen?${new URLSearchParams({ betrag: String(Math.abs(b.betrag_ct)), datum: b.datum, aussteller: b.gegenseite || b.zweck.slice(0, 40) })}`
 
   return (
     <>

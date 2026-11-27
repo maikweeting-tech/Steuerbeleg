@@ -91,6 +91,24 @@ describe('Kontoauszug – Formate (Annahme)', () => {
   it('gleiche Datei → gleiche Buchungs-Ids', () => {
     expect(liesKontoauszug(SPARKASSE_CAMT).buchungen.map((b) => b.id)).toEqual(liesKontoauszug(SPARKASSE_CAMT).buchungen.map((b) => b.id))
   })
+  it('Sparda-Bank: Vorspann, Buchungstag/Umsatz, Empfänger im Verwendungszweck (Format angenommen)', () => {
+    const t = ['"Kontonummer:";"DE12 3456 7890 1234 5678 90"', '"Zeitraum:";"01.01.2026 - 31.12.2026"', '',
+      '"Buchungstag";"Wertstellungstag";"Verwendungszweck";"Umsatz";"Währung"',
+      '"14.03.2026";"14.03.2026";"Stadtwerke Kleve GmbH Abschlag März";"-49,99";"EUR"',
+      '"15.03.2026";"15.03.2026";"Gehalt";"2.500,00";"EUR"'].join('\r\n')
+    const r = liesKontoauszug(t)
+    expect(r.bank).toBe('Sparda-Bank')
+    expect(r.warnungen).toEqual([])
+    expect(r.buchungen.map((b) => [b.datum, b.betrag_ct, b.zweck])).toEqual([
+      ['2026-03-14', -4999, 'Stadtwerke Kleve GmbH Abschlag März'], ['2026-03-15', 250000, 'Gehalt'],
+    ])
+    expect(r.buchungen[0].konto).toBe('DE12345678901234567890')
+  })
+  it('anderes Format mit Datum und Betrag wird trotzdem gelesen', () => {
+    const r = liesKontoauszug('Datum;Betrag;Text\n01.02.2026;-10,00;Test')
+    expect(r.bank).toBe('Spalten automatisch zugeordnet')
+    expect(r.buchungen).toHaveLength(1)
+  })
   it('unbekanntes Format → Hinweis zur Spaltenzuordnung', () => {
     const r = liesKontoauszug('a;b;c\n1;2;3')
     expect(r.buchungen).toEqual([])
