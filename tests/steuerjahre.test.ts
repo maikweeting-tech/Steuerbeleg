@@ -7,11 +7,12 @@ import { pruefePflicht, leererEntwurf } from '../src/fachlich/beleg'
 describe('Steuerjahre', () => {
   afterEach(() => localStorage.clear())
   it('2024 und 2026 sind vorhanden, neuestes zuerst', () => {
-    expect(JAHRE).toEqual([2026, 2024])
+    expect(JAHRE).toEqual([2026, 2025, 2024])
+    expect(KONFIGURATIONEN[2025].steuerjahr).toBe(2025)
     expect(KONFIGURATIONEN[2024].steuerjahr).toBe(2024)
   })
-  it('Konfiguration 2024 ist vollständig und nur „prüfen“', () => {
-    const k = KONFIGURATIONEN[2024]
+  it.each([2024, 2025])('Konfiguration %i ist vollständig und nur „prüfen“', (j) => {
+    const k = KONFIGURATIONEN[j]
     expect(pruefeKonfig(k)).toEqual([])
     for (const w of Object.values(k.werte)) expect(w.status).toBe('prüfen')
     for (const m of k.module) for (const x of m.kategorien) expect(x.elster_zeile.status).toBe('prüfen')

@@ -1,0 +1,691 @@
+{
+  "steuerjahr": 2025,
+  "hinweis": "Steuerjahr 2025. Alle Werte sind Platzhalter (status 'prüfen'). Vor Verwendung gegen das Recht 2025 und die ELSTER-Formulare 2025 prüfen.",
+  "personen": [
+    {
+      "id": "maik",
+      "name": "Maik"
+    },
+    {
+      "id": "anna",
+      "name": "Anna"
+    }
+  ],
+  "module": [
+    {
+      "id": "V",
+      "name": "Anlage V – Vermietung und Verpachtung",
+      "ordner": "V_Vermietung",
+      "ebene": "objekt",
+      "kategorien": [
+        {
+          "schluessel": "kaltmiete",
+          "name": "Kaltmiete",
+          "art": "einnahme",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "nk_vorauszahlung",
+          "name": "Nebenkostenvorauszahlung",
+          "art": "einnahme",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "nk_nachzahlung",
+          "name": "Nebenkostennachzahlung",
+          "art": "einnahme",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "erstattung",
+          "name": "Erstattung",
+          "art": "einnahme",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "schuldzinsen",
+          "name": "Schuldzinsen",
+          "art": "werbungskosten",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "grundsteuer",
+          "name": "Grundsteuer",
+          "art": "werbungskosten",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          },
+          "umlagefaehig_vorschlag": true
+        },
+        {
+          "schluessel": "gebaeudeversicherung",
+          "name": "Gebäudeversicherung",
+          "art": "werbungskosten",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          },
+          "umlagefaehig_vorschlag": true
+        },
+        {
+          "schluessel": "erhaltungsaufwand",
+          "name": "Erhaltungsaufwand",
+          "art": "werbungskosten",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "hausverwaltung",
+          "name": "Hausverwaltung",
+          "art": "werbungskosten",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "fahrtkosten_objekt",
+          "name": "Fahrtkosten zum Objekt",
+          "art": "werbungskosten",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "kontofuehrung",
+          "name": "Kontoführung",
+          "art": "werbungskosten",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "afa_info",
+          "name": "Abschreibung (nur Info)",
+          "art": "info",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        }
+      ]
+    },
+    {
+      "id": "AUS",
+      "name": "Ausländische Vermietung – Kamperland (NL)",
+      "ordner": "AUS_Ausland/Kamperland_NL",
+      "ebene": "keine",
+      "kategorien": [
+        {
+          "schluessel": "mieteinnahme",
+          "name": "Mieteinnahme",
+          "art": "einnahme",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "nl_steuerbescheid",
+          "name": "Niederländischer Steuerbescheid",
+          "art": "nachweis",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "nebenkosten",
+          "name": "Nebenkosten",
+          "art": "werbungskosten",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "schuldzinsen",
+          "name": "Schuldzinsen",
+          "art": "werbungskosten",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "versicherung",
+          "name": "Versicherung",
+          "art": "werbungskosten",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "erhaltungsaufwand",
+          "name": "Erhaltungsaufwand",
+          "art": "werbungskosten",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "sonstiges",
+          "name": "Sonstiges",
+          "art": "werbungskosten",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        }
+      ]
+    },
+    {
+      "id": "KIND",
+      "name": "Anlage Kind",
+      "ordner": "Kind",
+      "ebene": "kind",
+      "kategorien": [
+        {
+          "schluessel": "kinderbetreuung",
+          "name": "Kinderbetreuungskosten",
+          "art": "ausgabe",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "schulgeld",
+          "name": "Schulgeld",
+          "art": "ausgabe",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "kv_kind",
+          "name": "Krankenversicherungsbeiträge Kind",
+          "art": "ausgabe",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "ausbildung_nachweis",
+          "name": "Nachweis Ausbildungsfreibetrag",
+          "art": "nachweis",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        }
+      ]
+    },
+    {
+      "id": "N",
+      "name": "Anlage N",
+      "ordner": "N_{person}",
+      "ebene": "person",
+      "kategorien": [
+        {
+          "schluessel": "fahrten",
+          "name": "Fahrten",
+          "art": "werbungskosten",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "arbeitsmittel",
+          "name": "Arbeitsmittel",
+          "art": "werbungskosten",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "fortbildung",
+          "name": "Fortbildungskosten",
+          "art": "werbungskosten",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "homeoffice",
+          "name": "Homeoffice",
+          "art": "werbungskosten",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "kontofuehrung",
+          "name": "Kontoführung",
+          "art": "werbungskosten",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "berufsverband",
+          "name": "Berufsverbände",
+          "art": "werbungskosten",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        }
+      ]
+    },
+    {
+      "id": "R",
+      "name": "Anlage R – Renten",
+      "ordner": "R_{person}",
+      "ebene": "person",
+      "kategorien": [
+        {
+          "schluessel": "rentenbescheid",
+          "name": "Rentenbescheid und Rentenanpassung",
+          "art": "nachweis",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "rentenbezugsmitteilung",
+          "name": "Leistungsmitteilung (Rentenbezugsmitteilung)",
+          "art": "nachweis",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "werbungskosten_rente",
+          "name": "Werbungskosten zur Rente (z. B. Rentenberatung)",
+          "art": "werbungskosten",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        }
+      ]
+    },
+    {
+      "id": "SA",
+      "name": "Sonderausgaben und Vorsorge",
+      "ordner": "Sonderausgaben_Vorsorge",
+      "ebene": "keine",
+      "kategorien": [
+        {
+          "schluessel": "kv_pv",
+          "name": "Kranken- und Pflegeversicherung",
+          "art": "ausgabe",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "altersvorsorge",
+          "name": "Altersvorsorge",
+          "art": "ausgabe",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "haftpflicht",
+          "name": "Haftpflichtversicherung",
+          "art": "ausgabe",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "spenden",
+          "name": "Spenden",
+          "art": "ausgabe",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "kirchensteuer",
+          "name": "Kirchensteuer",
+          "art": "ausgabe",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        }
+      ]
+    },
+    {
+      "id": "35A",
+      "name": "§ 35a – Haushaltsnahe Dienstleistungen und Handwerker",
+      "ordner": "35a_Haushalt_Handwerker",
+      "ebene": "keine",
+      "kategorien": [
+        {
+          "schluessel": "haushaltsnah",
+          "name": "Haushaltsnahe Dienstleistungen",
+          "art": "ausgabe",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "handwerker",
+          "name": "Handwerkerleistungen",
+          "art": "ausgabe",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "minijob",
+          "name": "Minijob im Haushalt",
+          "art": "ausgabe",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        }
+      ]
+    },
+    {
+      "id": "AGB",
+      "name": "Außergewöhnliche Belastungen",
+      "ordner": "agB_Aussergewoehnliche_Belastungen",
+      "ebene": "keine",
+      "kategorien": [
+        {
+          "schluessel": "krankheitskosten",
+          "name": "Krankheitskosten",
+          "art": "ausgabe",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "pflegekosten",
+          "name": "Pflegekosten",
+          "art": "ausgabe",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "behinderung_nachweis",
+          "name": "Behinderung (Nachweis)",
+          "art": "nachweis",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "bestattung",
+          "name": "Bestattungskosten",
+          "art": "ausgabe",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "sonstige_agb",
+          "name": "Sonstige außergewöhnliche Belastungen",
+          "art": "ausgabe",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        }
+      ]
+    },
+    {
+      "id": "KAP",
+      "name": "Anlage KAP – Kapitalerträge",
+      "ordner": "KAP_Kapitalertraege",
+      "ebene": "keine",
+      "kategorien": [
+        {
+          "schluessel": "jahressteuerbescheinigung",
+          "name": "Jahressteuerbescheinigung",
+          "art": "nachweis",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "verlustbescheinigung",
+          "name": "Verlustbescheinigung",
+          "art": "nachweis",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "auslaendische_ertraege",
+          "name": "Ausländische Erträge",
+          "art": "nachweis",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "sonstiges_kap",
+          "name": "Sonstiges KAP",
+          "art": "nachweis",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        }
+      ]
+    },
+    {
+      "id": "SONST",
+      "name": "Sonstiges / ungeklärt",
+      "ordner": "Sonstiges_ungeklaert",
+      "ebene": "ohne_kategorie",
+      "kategorien": []
+    }
+  ],
+  "zusatzordner": [
+    "Export"
+  ],
+  "werte": {
+    "entfernungspauschale": {
+      "wert": null,
+      "einheit": "€/km",
+      "quelle": "",
+      "status": "prüfen"
+    },
+    "homeoffice_tagespauschale": {
+      "wert": null,
+      "einheit": "€/Tag",
+      "quelle": "",
+      "status": "prüfen"
+    },
+    "homeoffice_hoechsttage": {
+      "wert": null,
+      "einheit": "Tage",
+      "quelle": "",
+      "status": "prüfen"
+    },
+    "dienstreise_km_satz_pkw": {
+      "wert": null,
+      "einheit": "€/km",
+      "quelle": "",
+      "status": "prüfen"
+    },
+    "35a_haushaltsnah_satz": {
+      "wert": null,
+      "einheit": "%",
+      "quelle": "",
+      "status": "prüfen"
+    },
+    "35a_haushaltsnah_hoechstbetrag": {
+      "wert": null,
+      "einheit": "€",
+      "quelle": "",
+      "status": "prüfen"
+    },
+    "35a_handwerker_satz": {
+      "wert": null,
+      "einheit": "%",
+      "quelle": "",
+      "status": "prüfen"
+    },
+    "35a_handwerker_hoechstbetrag": {
+      "wert": null,
+      "einheit": "€",
+      "quelle": "",
+      "status": "prüfen"
+    }
+  },
+  "hinweis_umlage": "umlagefaehig_vorschlag ist nur ein Vorschlag (BetrKV), je Beleg änderbar – prüfen.",
+  "hinweis_agb": "Keine Berechnung der zumutbaren Belastung. Kategorien und Zeilen sind Platzhalter – prüfen."
+}

@@ -1,7 +1,7 @@
 # Test S0 – Steuerjahr 2024 in der App
 
 Nach dem Merge ca. 2 Minuten warten, App schließen und neu öffnen (bzw. „Jetzt neu laden“).
-Neu: Oben neben „Steuerbeleg“ steht das **Steuerjahr** (Auswahl 2026 / 2024). Die Auswahl gilt je Gerät; beim Wechsel lädt die App neu.
+Neu: Oben neben „Steuerbeleg“ steht das **Steuerjahr** (Auswahl 2026 / 2025 / 2024). Die Auswahl gilt je Gerät; beim Wechsel lädt die App neu.
 Neu in beiden Jahren: Bereich **Anlage R – Renten**.
 
 | Nr. | Wer | Schritt | Erwartung |
