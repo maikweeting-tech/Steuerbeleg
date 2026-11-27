@@ -86,8 +86,67 @@ function kindFragen(jahr: number, i: number, a: Antworten): Frage[] {
   ]
 }
 
-/** Fragenkatalog. jahr wird in Texte eingesetzt; die Antworten steuern die Fragen je Kind. */
-export function bereiche(jahr: number, a: Antworten = {}): Bereich[] {
+/** Daten aus der App, die Fragen erzeugen oder vorbelegen (z. B. Mietobjekte). */
+export interface Kontext {
+  objekte: { id: string; bezeichnung: string; anschaffungsdatum: string }[]
+  /** Einnahmen (Miete, Nebenkosten) je Objekt im Steuerjahr in Cent */
+  einnahmenCt: Record<string, number>
+}
+const LEERER_KONTEXT: Kontext = { objekte: [], einnahmenCt: {} }
+
+const zahl = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+/** Summe der Einnahmen je Objekt im Jahr (Monat „JJJJ-MM“). */
+export function einnahmenJeObjekt(jahr: number, einnahmen: { objekt_id: string; monat: string; betrag_ct: number }[]): Record<string, number> {
+  const r: Record<string, number> = {}
+  for (const e of einnahmen) if (e.monat.startsWith(`${jahr}-`)) r[e.objekt_id] = (r[e.objekt_id] ?? 0) + e.betrag_ct
+  return r
+}
+
+/** Fragen für ein Mietobjekt. Ausland: nur Klärungshinweis und Unterlagen. 3-Jahres-Grenze ist eine Annahme (prüfen). */
+function objektFragen(jahr: number, o: Kontext['objekte'][number], ct: number | undefined, a: Antworten): Frage[] {
+  const k = `v_${o.id}`
+  const n = o.bezeichnung || 'Objekt'
+  const FV = 'Anlage V'
+  const inland = () => a[`${k}_lage`]?.wert === 'inland'
+  const kaufJahr = geburtsjahr(o.anschaffungsdatum)
+  const w = (f: Partial<Frage> & Pick<Frage, 'id' | 'frage' | 'erklaerung'>): Frage => ({ typ: 'ja_nein', formular: FV, wenn: { frage: 'v_vermietet', wert: 'ja' }, zeigen: inland, ...f })
+  return [
+    { id: `${k}_lage`, typ: 'auswahl', formular: `${FV} bzw. Anlage AUS`, wenn: { frage: 'v_vermietet', wert: 'ja' },
+      frage: `${n}: Liegt das Objekt in Deutschland oder im Ausland?`, erklaerung: 'Vermietung im Ausland wird anders erklärt (z. B. Anlage AUS, Steuer im Ausland). Das klärt die Steuerberatung.',
+      optionen: [{ wert: 'inland', name: 'Deutschland' }, { wert: 'ausland', name: 'Ausland' }],
+      hinweis: { wert: 'ausland', text: `${n}: Vermietung im Ausland – mit der Steuerberatung klären (Anlage AUS, prüfen).` } },
+    { ...w({ id: `${k}_ausland_unterlagen`, frage: `${n}: Habt ihr die ausländischen Unterlagen ${jahr} (Steuerbescheid, Abrechnungen der Vermittlung)?`,
+      erklaerung: 'Die Steuerberatung braucht Einnahmen, Kosten und die im Ausland gezahlte Steuer.', unterlage: { name: `${n}: ausländischer Steuerbescheid und Abrechnungen ${jahr}` } }),
+      zeigen: () => a[`${k}_lage`]?.wert === 'ausland' },
+    w({ id: `${k}_art`, typ: 'auswahl', frage: `${n}: Wie wird vermietet?`, erklaerung: 'Bei Ferienwohnungen und teilweiser Selbstnutzung werden Kosten anders aufgeteilt.',
+      optionen: [{ wert: 'dauer', name: 'Dauervermietung' }, { wert: 'ferien', name: 'Ferienwohnung' }, { wert: 'teil', name: 'teilweise selbst genutzt' }, { wert: 'sonst', name: 'Garage/Sonstiges' }] }),
+    w({ id: `${k}_selbst`, frage: `${n}: Habt ihr die Wohnung ${jahr} auch selbst genutzt?`, erklaerung: 'Bei Selbstnutzung zählen die Kosten nur anteilig. Tage der Selbstnutzung und Leerstand in die Notiz.',
+      zeigen: () => inland() && ['ferien', 'teil'].includes(a[`${k}_art`]?.wert ?? ''), hinweis: { wert: 'ja', text: `${n}: Selbstnutzung – Aufteilung der Kosten mit der Steuerberatung klären.` } }),
+    w({ id: `${k}_ganzjaehrig`, frage: `${n}: War das Objekt ${jahr} das ganze Jahr vermietet?`, erklaerung: 'Bei Leerstand oder Mieterwechsel bitte Zeitraum und Bemühungen um neue Mieter in die Notiz.',
+      hinweis: { wert: '!ja', text: `${n}: Leerstand – Zeitraum und Vermietungsabsicht mit der Steuerberatung klären.` } }),
+    w({ id: `${k}_einnahmen`, typ: 'betrag', frage: `${n}: Einnahmen ${jahr} (Miete + Nebenkostenvorauszahlungen) in €`,
+      erklaerung: 'Alles, was die Mieter gezahlt haben, auch Nachzahlungen aus der Nebenkostenabrechnung. Der Vorschlag ist die Summe aus „Vermietung → Einnahmen“ in der App.',
+      vorschlag: ct ? zahl.format(ct / 100) : undefined }),
+    w({ id: `${k}_verbilligt`, frage: `${n}: Ist an Angehörige oder deutlich unter der ortsüblichen Miete vermietet?`, erklaerung: 'Liegt die Miete unter einer bestimmten Grenze der ortsüblichen Miete, zählen die Kosten nur anteilig (Grenzwerte prüfen).',
+      hinweis: { wert: 'ja', text: `${n}: verbilligte Vermietung – Vergleich mit ortsüblicher Miete mit der Steuerberatung klären.` } }),
+    w({ id: `${k}_nebenkosten`, frage: `${n}: Habt ihr eine Nebenkostenabrechnung erstellt (für ${jahr - 1} oder ${jahr})?`, erklaerung: 'Nachzahlungen der Mieter sind Einnahmen, Erstattungen an die Mieter mindern sie.',
+      unterlage: { name: `${n}: Nebenkostenabrechnung(en)` } }),
+    w({ id: `${k}_darlehen`, frage: `${n}: Gibt es ein Darlehen für das Objekt?`, erklaerung: 'Schuldzinsen sind Werbungskosten, die Tilgung nicht. Die Bank schickt eine Zinsbescheinigung.',
+      unterlage: { name: `${n}: Zinsbescheinigung ${jahr} der Bank` } }),
+    w({ id: `${k}_reparatur`, frage: `${n}: Gab es ${jahr} Reparaturen, Renovierungen oder Modernisierungen?`, erklaerung: 'Rechnungen am besten in der App erfassen. Größere Beträge kann die Steuerberatung auf mehrere Jahre verteilen.',
+      unterlage: { name: `${n}: Rechnungen Reparaturen/Renovierung` },
+      pruefe: () => a[`${k}_reparatur`]?.wert === 'ja' && kaufJahr !== null && jahr - kaufJahr <= 3
+        ? `${n}: Renovierung in den ersten 3 Jahren nach dem Kauf – Grenze für anschaffungsnahe Kosten mit der Steuerberatung klären (prüfen).` : '' }),
+    w({ id: `${k}_kosten`, frage: `${n}: Sind die laufenden Kosten ${jahr} in der App erfasst (Grundsteuer, Versicherung, Hausgeld, Verwaltung)?`, erklaerung: 'Die Belegmappe für die Steuerberatung enthält nur, was in der App erfasst ist.',
+      hinweis: { wert: '!ja', text: `${n}: Belege für laufende Kosten fehlen noch – nacherfassen.` } }),
+    w({ id: `${k}_kauf`, frage: `${n}: Wurde das Objekt ${jahr} gekauft, verkauft oder umgebaut (Anbau, Ausbau)?`, erklaerung: 'Dann ändert sich die Abschreibung (AfA). Die App rechnet keine AfA, die Steuerberatung braucht die Verträge.',
+      unterlage: { name: `${n}: Kauf-/Verkaufsvertrag bzw. Bauunterlagen` }, hinweis: { wert: 'ja', text: `${n}: Kauf/Verkauf/Umbau – AfA und ggf. Spekulationsfrist mit der Steuerberatung klären.` } }),
+  ]
+}
+
+/** Fragenkatalog. jahr wird in Texte eingesetzt; Antworten und App-Daten steuern Fragen je Kind und je Objekt. */
+export function bereiche(jahr: number, a: Antworten = {}, kx: Kontext = LEERER_KONTEXT): Bereich[] {
   const kinder = Math.min(6, Math.max(0, Number(a.kinder_anzahl?.wert) || 0))
   return [
     {
@@ -204,7 +263,14 @@ export function bereiche(jahr: number, a: Antworten = {}): Bereich[] {
           { formular: 'Anlage KAP', hinweis: { wert: 'ja', text: 'Private Darlehenszinsen mit der Steuerberatung klären.' } }),
       ],
     },
-    { id: 'vermietung', name: 'Vermietung', beschreibung: 'Anlage V je Objekt. Folgt in S3.', fragen: [], folgt: true },
+    {
+      id: 'vermietung', name: 'Vermietung (Anlage V)', beschreibung: 'Je Mietobjekt aus der App ein paar Fragen. Objekte im Ausland nur als Klärungspunkt.',
+      fragen: [
+        JN('v_vermietet', `Habt ihr ${jahr} etwas vermietet (Wohnung, Haus, Ferienwohnung, Garage)?`, 'Die Fragen je Objekt kommen aus den Objekten, die ihr in der App unter „Vermietung“ angelegt habt.',
+          { formular: 'Anlage V (je Objekt eine)', pruefe: () => a.v_vermietet?.wert === 'ja' && !kx.objekte.length ? 'Noch kein Mietobjekt in der App: bitte unter „Vermietung“ anlegen, dann erscheinen die Fragen je Objekt.' : '' }),
+        ...kx.objekte.flatMap((o) => objektFragen(jahr, o, kx.einnahmenCt[o.id], a)),
+      ],
+    },
     { id: 'ausgaben', name: 'Vorsorge, Belastungen, Haushalt', beschreibung: 'Sonderausgaben, außergewöhnliche Belastungen, § 35a. Folgt in S4.', fragen: [], folgt: true },
   ]
 }

@@ -1,6 +1,6 @@
 // S1: Erklärungs-Assistent – Bedingungen, Fortschritt, Unterlagen, Klärungspunkte, Speicherformat
 import { describe, expect, it } from 'vitest'
-import { bereiche, fortschritt, geburtsjahr, hinweisText, gesamtFortschritt, klaeren, naechsteOffene, passtWert, sichtbar, unterlagen, WEISS_NICHT, type Antworten } from '../src/fachlich/assistent'
+import { bereiche, einnahmenJeObjekt, fortschritt, geburtsjahr, hinweisText, gesamtFortschritt, klaeren, naechsteOffene, passtWert, sichtbar, unterlagen, WEISS_NICHT, type Antworten } from '../src/fachlich/assistent'
 import { antwortenAus, stammAus, zeileAusAntwort } from '../src/daten/stamm'
 
 const L = bereiche(2024)
@@ -83,6 +83,38 @@ describe('Erklärungs-Assistent', () => {
     expect(sicht('rente', a)).toContain('r_befristet')
     expect(klaeren(L2(a), a).map((x) => x.frage)).toEqual(['r_befristet', 'kap_freistellung'])
     expect(unterlagen(L2(a), a).map((u) => u.frage)).toEqual(['n_lohn', 'r_rente', 'kap_ertraege'])
-    expect(L2(a).filter((b) => b.folgt).map((b) => b.id)).toEqual(['vermietung', 'ausgaben'])
+    expect(L2(a).filter((b) => b.folgt).map((b) => b.id)).toEqual(['ausgaben'])
+  })
+
+  it('S3: Vermietung je Objekt aus der App, Ausland nur Klärung, Einnahmen als Vorschlag (Testdaten)', () => {
+    const w = (wert: string) => ({ wert, notiz: '' })
+    const kx = {
+      objekte: [{ id: 'o1', bezeichnung: 'Testhaus', anschaffungsdatum: '2022-05-01' }, { id: 'o2', bezeichnung: 'Testferien', anschaffungsdatum: '' }],
+      einnahmenCt: einnahmenJeObjekt(2024, [
+        { objekt_id: 'o1', monat: '2024-01', betrag_ct: 50000 }, { objekt_id: 'o1', monat: '2024-02', betrag_ct: 73450 },
+        { objekt_id: 'o1', monat: '2023-12', betrag_ct: 99999 }, // anderes Jahr
+      ]),
+    }
+    expect(kx.einnahmenCt).toEqual({ o1: 123450 })
+    const v = (a: Antworten) => bereiche(2024, a, kx).find((b) => b.id === 'vermietung')!
+    const sicht = (a: Antworten) => v(a).fragen.filter((f) => sichtbar(f, a)).map((f) => f.id)
+    expect(sicht({})).toEqual(['v_vermietet'])
+    expect(sicht({ v_vermietet: w('ja') })).toEqual(['v_vermietet', 'v_o1_lage', 'v_o2_lage'])
+    const a: Antworten = { v_vermietet: w('ja'), v_o1_lage: w('inland'), v_o2_lage: w('ausland'), v_o1_reparatur: w('ja'), v_o1_art: w('dauer') }
+    const ids = sicht(a)
+    expect(ids).toContain('v_o1_einnahmen')
+    expect(ids).not.toContain('v_o1_selbst') // nur Ferien/teilweise selbst genutzt
+    expect(ids).toContain('v_o2_ausland_unterlagen')
+    expect(ids.filter((x) => x.startsWith('v_o2_'))).toEqual(['v_o2_lage', 'v_o2_ausland_unterlagen'])
+    expect(v(a).fragen.find((f) => f.id === 'v_o1_einnahmen')!.vorschlag).toBe('1.234,50')
+    expect(v(a).fragen.find((f) => f.id === 'v_o2_einnahmen')!.vorschlag).toBeUndefined()
+    const k = klaeren(bereiche(2024, a, kx), a).map((x) => x.frage)
+    expect(k).toEqual(['v_o1_reparatur', 'v_o2_lage']) // Kauf 2022 → innerhalb 3 Jahre; Ausland
+    expect(klaeren(bereiche(2026, a, kx), a).map((x) => x.frage)).toEqual(['v_o2_lage'])
+    // ohne Objekte in der App: Hinweis zum Anlegen
+    expect(klaeren(bereiche(2024, { v_vermietet: w('ja') }), { v_vermietet: w('ja') })[0].text).toContain('Noch kein Mietobjekt')
+    // Ids eindeutig auch mit Kindern und Objekten
+    const voll = bereiche(2024, { ...a, kinder_anzahl: w('6') }, kx).flatMap((b) => b.fragen.map((f) => f.id))
+    expect(new Set(voll).size).toBe(voll.length)
   })
 })
