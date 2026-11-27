@@ -1,7 +1,7 @@
 // Verdrahtung der Synchronisierung mit Google und IndexedDB sowie automatischer Start.
 import { AKTUELLES_JAHR, KONFIGURATIONEN } from '../konfig'
 import { istAngemeldet } from '../google/auth'
-import { findeBelegDatei, findeInOrdner, holeOderErstellePfad, ladeHoch, ORDNER_MIME, SHEET_MIME, verschiebeDatei } from '../google/drive'
+import { findeBelegDatei, findeInOrdner, holeOderErstellePfad, ladeHoch, ladeHochGross, ORDNER_MIME, SHEET_MIME, verschiebeDatei } from '../google/drive'
 import { ergaenzeBlaetter, ersetzeZeile, haengeAn, leereZeilen, leseBlatt } from '../google/sheets'
 import { gespeicherteWurzel } from './einrichtung'
 import { belegCache, melde, warteschlange } from './speicher'
@@ -209,4 +209,18 @@ export async function markiereBuchung(jahr: number, b: Buchung, m: Markierung | 
     if (!(await ersetzeZeile(indexId, 'Buchungen', b.id, z))) await haengeAn(indexId, 'Buchungen', [z])
   }
   return ladeStamm(jahr)
+}
+
+/** Belegindex des Vorjahres für den Jahresvergleich (E11); null, wenn es keinen gibt. */
+export async function ladeVorjahr(jahr: number): Promise<Beleg[] | null> {
+  if (!gespeicherteWurzel()) return null
+  try { return await ladeBelege(jahr - 1, dienste) } catch { return null }
+}
+
+/** Speichert eine Exportdatei in Steuer/<Jahr>/Export (großer Upload, resumable). */
+export async function speichereExport(jahr: number, name: string, mimeType: string, inhalt: Blob) {
+  const wurzel = gespeicherteWurzel()
+  if (!wurzel) throw new Error('Kein Ordner „Steuer“ verbunden.')
+  const ordner = await holeOderErstellePfad([String(jahr), 'Export'], wurzel)
+  return ladeHochGross(name, mimeType, inhalt, ordner.id)
 }
