@@ -5,6 +5,7 @@ import type { Anteil, Einheit, Einnahme, Objekt, Umlageschluessel } from '../fac
 import type { Arbeitstage, Fahrt, Fahrtzweck, Kind } from '../fachlich/personen'
 import type { Rhythmus, Vorlage } from '../fachlich/vorlagen'
 import type { Buchung, Markierung } from '../fachlich/kontoauszug'
+import { KOPF_ID, LEERER_KOPF, type BescheidKopf, type BescheidPosten } from '../fachlich/bescheid'
 
 type Zelle = string | number
 type Zeile = (Zelle | undefined)[]
@@ -106,6 +107,26 @@ export function zeileAusBuchung(b: Buchung, m: Markierung, beleg_id: string, not
   return BLAETTER.Buchungen.map((s) => w[s] ?? '')
 }
 
+// ---------------------------------------------------------------- ab M8: Bescheid (E12)
+
+export function bescheidAusZeile(z: Zeile): BescheidPosten {
+  const g = lies('Bescheid', z)
+  return { id: g('id'), bezeichnung: g('bezeichnung'), modul: g('modul'), erklaerung_ct: zahl(g('erklaerung_ct')), bescheid_ct: zahl(g('bescheid_ct')), notiz: g('notiz') }
+}
+export function kopfAusZeile(z: Zeile | undefined): BescheidKopf {
+  if (!z) return LEERER_KOPF
+  const g = lies('Bescheid', z)
+  return { bescheiddatum: g('bescheiddatum'), einspruchsfrist: g('einspruchsfrist'), notiz: g('notiz') }
+}
+export function zeileAusBescheid(p: BescheidPosten, von: string, am: string): Zelle[] {
+  const w: Record<string, Zelle> = { ...p, erklaerung_ct: p.erklaerung_ct ?? '', bescheid_ct: p.bescheid_ct ?? '', geaendert_von: von, geaendert_am: am }
+  return BLAETTER.Bescheid.map((s) => w[s] ?? '')
+}
+export function zeileAusKopf(k: BescheidKopf, von: string, am: string): Zelle[] {
+  const w: Record<string, Zelle> = { ...k, id: KOPF_ID, bezeichnung: 'Bescheid', geaendert_von: von, geaendert_am: am }
+  return BLAETTER.Bescheid.map((s) => w[s] ?? '')
+}
+
 export interface Stamm {
   objekte: Objekt[]
   einheiten: Einheit[]
@@ -118,9 +139,11 @@ export interface Stamm {
   pdfOffen: string[]
   vorlagen: Vorlage[]
   buchungen: ReturnType<typeof buchungAusZeile>[]
+  bescheid: BescheidPosten[]
+  bescheidKopf: BescheidKopf
 }
 
-export const LEER: Stamm = { objekte: [], einheiten: [], einnahmen: [], aufteilung: [], kinder: [], fahrten: [], arbeitstage: [], pdfOffen: [], vorlagen: [], buchungen: [] }
+export const LEER: Stamm = { objekte: [], einheiten: [], einnahmen: [], aufteilung: [], kinder: [], fahrten: [], arbeitstage: [], pdfOffen: [], vorlagen: [], buchungen: [], bescheid: [], bescheidKopf: LEERER_KOPF }
 
 export function stammAus(blaetter: Record<string, Zeile[]>): Stamm {
   const voll = (l: Zeile[] | undefined) => (l ?? []).filter((z) => z[0] !== undefined && z[0] !== '')
@@ -135,5 +158,7 @@ export function stammAus(blaetter: Record<string, Zeile[]>): Stamm {
     pdfOffen: voll(blaetter.Auftraege).filter((z) => !z[8]).map((z) => String(z[2] ?? '')),
     vorlagen: voll(blaetter.Vorlagen).map(vorlageAusZeile),
     buchungen: voll(blaetter.Buchungen).map(buchungAusZeile),
+    bescheid: voll(blaetter.Bescheid).filter((z) => z[0] !== KOPF_ID).map(bescheidAusZeile),
+    bescheidKopf: kopfAusZeile(voll(blaetter.Bescheid).find((z) => z[0] === KOPF_ID)),
   }
 }

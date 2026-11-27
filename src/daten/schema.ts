@@ -34,6 +34,8 @@ export const BLAETTER: Record<string, string[]> = {
     'dauerbeleg_datei_id', 'aktiv', 'einheit_id', 'kind_id', 'faellig_monat',
   ],
   Buchungen: ['id', 'konto', 'datum', 'betrag_ct', 'gegenseite', 'zweck', 'markierung', 'beleg_id', 'notiz', 'markiert_von', 'markiert_am'],
+  // ab M8: Bescheid-Abgleich (E12); Zeile mit id „kopf“ = Bescheiddatum und Einspruchsfrist
+  Bescheid: ['id', 'bezeichnung', 'modul', 'erklaerung_ct', 'bescheid_ct', 'notiz', 'bescheiddatum', 'einspruchsfrist', 'geaendert_von', 'geaendert_am'],
 }
 
 export const belegindexName = (jahr: number) => `00_Belegindex_${jahr}`

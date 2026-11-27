@@ -23,7 +23,7 @@ describe('Excel-Export', () => {
   it('enthält alle Blätter und Formeln statt fester Summen', async () => {
     const d = testDaten()
     const { buffer, blaetter } = await erstelleExcel(d, ExcelJS)
-    expect(blaetter).toEqual(['Übersicht', 'Anlage V', '35a', 'NK-Vorlage', 'Anlage N', 'Fragen', 'Jahresvergleich', 'Prüfung', 'Annahmen', 'Belege', 'Aufteilung', 'Objekte', 'Einheiten', 'Einnahmen', 'Fahrten'])
+    expect(blaetter).toEqual(['Übersicht', 'Anlage V', '35a', 'NK-Vorlage', 'Anlage N', 'Fragen', 'Jahresvergleich', 'Bescheid', 'Prüfung', 'Annahmen', 'Belege', 'Aufteilung', 'Objekte', 'Einheiten', 'Einnahmen', 'Fahrten'])
     const wb = await lade(buffer)
     const ue = wb.getWorksheet('Übersicht')!
     const formeln: string[] = []
@@ -107,6 +107,10 @@ describe('Excel-Export', () => {
     expect(zahl('Anlage N', 'I5')).toBeCloseTo(180.5, 6)
     // Jahresvergleich AGB: 50,00 → 85,00
     expect(zahl('Jahresvergleich', 'G5')).toBeCloseTo(35, 6)
+    // Bescheid: Abweichung = Bescheid − Erklärung, leer wenn ein Wert fehlt
+    expect(zahl('Bescheid', 'E5')).toBeCloseTo(-100, 6)
+    expect((wb.getWorksheet('Bescheid')!.getCell('E6').value as { result?: unknown }).result ?? '').toBe('') // LibreOffice speichert "" ohne Ergebnis
+    expect(zahl('Bescheid', 'E7')).toBeCloseTo(-100, 6)
     // Fragen verweisen auf Belege
     expect(String(wert(wb.getWorksheet('Fragen')!.getCell('G5').value))).toBe('Bar bezahlt – trotzdem absetzbar?')
   }, 120000)
