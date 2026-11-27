@@ -9,6 +9,8 @@ import ObjektSeite from './seiten/Objekt'
 import BelegBearbeiten from './seiten/BelegBearbeiten'
 import Fahrten from './seiten/Fahrten'
 import Kinder from './seiten/Kinder'
+import Check from './seiten/Check'
+import Konto from './seiten/Konto'
 import { starteAnmeldung, stilleAnmeldungMoeglich } from './google/auth'
 import { automatischerSync } from './daten/dienste'
 import { useDaten } from './komponenten/hooks'
@@ -28,6 +30,8 @@ function Navigation() {
       <NavLink to="/" end>Start</NavLink>
       <NavLink to="/erfassen">Erfassen</NavLink>
       <NavLink to="/belege">Belege{wartend.length > 0 && <> <span className="marke" title="warten auf Übertragung">{wartend.length}</span></>}</NavLink>
+      <NavLink to="/check">Check</NavLink>
+      <NavLink to="/konto">Konto</NavLink>
       <NavLink to="/objekte">Objekte</NavLink>
       <NavLink to="/fahrten">Fahrten</NavLink>
       <NavLink to="/kinder">Kinder</NavLink>
@@ -60,6 +64,8 @@ export default function App() {
           <Route path="/kinder" element={<Kinder />} />
           <Route path="/objekte" element={<Objekte />} />
           <Route path="/objekte/:id" element={<ObjektSeite />} />
+          <Route path="/check" element={<Check />} />
+          <Route path="/konto" element={<Konto />} />
           <Route path="/info" element={<Info />} />
         </Routes>
       </main>

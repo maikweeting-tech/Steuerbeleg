@@ -77,3 +77,23 @@ table.vorschlaege td { padding: 3px 8px 3px 0; vertical-align: middle; }
 table.vorschlaege button { min-height: 30px; padding: 2px 10px; }
 pre.ocr-text { white-space: pre-wrap; font-size: 0.8rem; max-height: 240px; overflow: auto; background: #f4f4f4; padding: 6px; }
 @media (prefers-color-scheme: dark) { pre.ocr-text { background: #222; } }
+
+/* M6: Suche/Filter, Fragen */
+.filter input[type=search] { width: 100%; margin-bottom: 6px; }
+.filter select { max-width: 48%; }
+.frage { color: #8a4b00; }
+@media (prefers-color-scheme: dark) { .frage { color: #f0b060; } }
+
+/* M6: Check und Konto */
+.perioden { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+button.periode { min-height: 32px; padding: 2px 7px; font-size: 0.85rem; border-radius: 6px; border: 1px solid transparent; }
+.p-ok { background: #d8f0dc; color: #1d5e2a; }
+.p-faellig { background: #fff1c2; color: #6b5000; }
+.p-fehlt { background: #f9d3d0; color: #8a1c13; font-weight: 700; }
+.p-kuenftig { background: #eee; color: #777; }
+.buchung { border-bottom: 1px solid #ddd; padding: 6px 0; }
+.buchung button { min-height: 32px; padding: 2px 8px; font-size: 0.85rem; }
+@media (prefers-color-scheme: dark) {
+  .p-ok { background: #1f4027; color: #bfe8c7; } .p-faellig { background: #4a3d10; color: #ffe8a0; }
+  .p-fehlt { background: #5a1d18; color: #ffd0cb; } .p-kuenftig { background: #333; color: #aaa; }
+}

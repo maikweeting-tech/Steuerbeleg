@@ -5,7 +5,9 @@ import type { Beleg, BelegEntwurf } from '../fachlich/beleg'
 export interface Wartend {
   id: string
   entwurf: BelegEntwurf
-  pdf: Blob
+  /** null = keine neue Datei, sondern Verweis auf einen Dauerbeleg (E6) */
+  pdf: Blob | null
+  dauerbeleg?: { id: string; name: string }
   seiten: number
   erfasst_von: string
   erfasst_am: string

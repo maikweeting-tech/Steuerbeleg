@@ -32,6 +32,8 @@ export interface BelegEntwurf {
   /** § 35a: Lohn-/Arbeitskosten und Material, jeweils brutto */
   arbeitskosten_ct: number | null
   material_ct: number | null
+  // ab M6 (E10): Frage an den Steuerberater, leer = keine
+  frage: string
 }
 
 export interface Beleg extends BelegEntwurf {
@@ -52,7 +54,7 @@ export function leererEntwurf(id: string): BelegEntwurf {
     id, belegdatum: '', zahlungsdatum: '', betrag_ct: null, aussteller: '', person: '',
     modul: '', kategorie: '', steuerjahr: null, steuerjahr_manuell: false, status: 'offen', notiz: '',
     objekt_id: '', einheit_id: '', umlagefaehig: false, aufteilung: [],
-    kind_id: '', zahlungsart: '', arbeitskosten_ct: null, material_ct: null,
+    kind_id: '', zahlungsart: '', arbeitskosten_ct: null, material_ct: null, frage: '',
   }
 }
 
@@ -228,7 +230,7 @@ export function zeileAus(b: Beleg): Zelle[] {
     objekt_id: b.aufteilung.length ? '' : b.objekt_id, einheit_id: b.aufteilung.length ? '' : b.einheit_id,
     umlagefaehig: b.umlagefaehig ? 'ja' : '',
     kind_id: b.kind_id, zahlungsart: b.zahlungsart,
-    arbeitskosten_ct: b.arbeitskosten_ct ?? '', material_ct: b.material_ct ?? '',
+    arbeitskosten_ct: b.arbeitskosten_ct ?? '', material_ct: b.material_ct ?? '', frage: b.frage,
     erfasst_von: b.erfasst_von, erfasst_am: b.erfasst_am, geaendert_von: b.geaendert_von,
     geaendert_am: b.geaendert_am, version: b.version,
   }
@@ -250,6 +252,6 @@ export function belegAusZeile(z: (string | number | undefined)[]): Beleg {
     geaendert_am: g('geaendert_am'), version: zahl('version') ?? 1,
     objekt_id: g('objekt_id'), einheit_id: g('einheit_id'), umlagefaehig: g('umlagefaehig') === 'ja', aufteilung: [],
     kind_id: g('kind_id'), zahlungsart: (['unbar', 'bar'].includes(g('zahlungsart')) ? g('zahlungsart') : '') as BelegEntwurf['zahlungsart'],
-    arbeitskosten_ct: zahl('arbeitskosten_ct'), material_ct: zahl('material_ct'),
+    arbeitskosten_ct: zahl('arbeitskosten_ct'), material_ct: zahl('material_ct'), frage: g('frage'),
   }
 }

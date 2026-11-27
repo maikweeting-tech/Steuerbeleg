@@ -121,6 +121,16 @@ describe('Anlage Kind und § 35a', () => {
     const z = f.blaetter.Belege[1]
     expect([z[BLAETTER.Belege.indexOf('zahlungsart')], z[BLAETTER.Belege.indexOf('arbeitskosten_ct')], z[BLAETTER.Belege.indexOf('material_ct')]]).toEqual(['unbar', 600, 400])
   })
+
+  it('Beleg aus Vorlage: kein Upload, Verweis auf Dauerbeleg, Frage-Spalte', async () => {
+    const f = fakes()
+    f.setze([{ ...wartend('v', { frage: 'Absetzbar?' }), pdf: null, dauerbeleg: { id: 'DAUER1', name: 'Versicherungsschein.pdf' } }])
+    expect(await synchronisiere(f.d, f.a)).toEqual({ uebertragen: 1, fehler: 0 })
+    expect(f.dateien).toEqual([])
+    const z = f.blaetter.Belege[0]
+    expect([z[BLAETTER.Belege.indexOf('datei_ids')], z[BLAETTER.Belege.indexOf('dateiname')], z[BLAETTER.Belege.indexOf('belegnr')], z[BLAETTER.Belege.indexOf('frage')]])
+      .toEqual(['DAUER1', '', 1, 'Absetzbar?'])
+  })
 })
 
 describe('IndexedDB-Warteschlange', () => {

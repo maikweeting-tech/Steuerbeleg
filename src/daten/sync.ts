@@ -72,9 +72,14 @@ export async function uebertrage(w: Wartend, d: SyncDienste, jahre: Map<number, 
   const schon = j.belege.find((b) => b.id === w.id)
   if (schon) return schon
 
-  let datei = await d.findeBelegDatei(w.id)
+  let datei = w.pdf ? await d.findeBelegDatei(w.id) : null
   let nr = Number(/_B(\d+)_/.exec(datei?.name ?? '')?.[1] ?? 0)
-  if (!datei) {
+  if (!w.pdf) {
+    // E6: Beleg aus Vorlage – verweist auf den Dauerbeleg, es wird keine Datei hochgeladen
+    nr = naechsteBelegnr(j.belege, jahr)
+    // dateiname bleibt leer: so wird der Dauerbeleg beim Bearbeiten nie verschoben oder umbenannt
+    datei = { id: w.dauerbeleg?.id ?? '', name: '' }
+  } else if (!datei) {
     nr = naechsteBelegnr(j.belege, jahr)
     const ziel = await d.holeOderErstellePfad(zielOrdnerPfad(w.entwurf, konfig, j.objekte, j.kinder), j.ordnerId)
     datei = await d.ladeHoch(dateiname(w.entwurf, nr), 'application/pdf', w.pdf, ziel.id, { steuerbeleg_beleg: w.id })
