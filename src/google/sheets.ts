@@ -38,3 +38,21 @@ export async function ergaenzeBlaetter(sheetId: string) {
     })
   }
 }
+
+type Zelle = string | number
+
+/** Liest alle Zeilen eines Blatts ohne Kopfzeile (Zahlen als Zahlen). */
+export async function leseBlatt(sheetId: string, blatt: string): Promise<Zelle[][]> {
+  const p = new URLSearchParams({ valueRenderOption: 'UNFORMATTED_VALUE', dateTimeRenderOption: 'FORMATTED_STRING' })
+  const d = await googleFetch(`${SHEETS}/${sheetId}/values/${encodeURIComponent(`'${blatt}'!A2:ZZ`)}?${p}`)
+  return d.values ?? []
+}
+
+/** Hängt Zeilen unten an (RAW: Texte bleiben Texte, z. B. Datum JJJJ-MM-TT). */
+export async function haengeAn(sheetId: string, blatt: string, zeilen: Zelle[][]) {
+  const p = new URLSearchParams({ valueInputOption: 'RAW', insertDataOption: 'INSERT_ROWS' })
+  await googleFetch(`${SHEETS}/${sheetId}/values/${encodeURIComponent(`'${blatt}'!A1`)}:append?${p}`, {
+    method: 'POST',
+    body: JSON.stringify({ values: zeilen }),
+  })
+}
