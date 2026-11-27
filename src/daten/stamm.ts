@@ -2,6 +2,7 @@
 // Lesen und Schreiben nur online; eine Kopie liegt lokal für die Erfassung ohne Netz.
 import { BLAETTER } from './schema'
 import type { Anteil, Einheit, Einnahme, Objekt, Umlageschluessel } from '../fachlich/objekte'
+import type { Stichwort } from '../fachlich/zuordnung'
 import type { Arbeitstage, Fahrt, Fahrtzweck, Kind } from '../fachlich/personen'
 import type { Rhythmus, Vorlage } from '../fachlich/vorlagen'
 import type { Buchung, Markierung } from '../fachlich/kontoauszug'
@@ -140,6 +141,16 @@ export function zeileAusAntwort(id: string, wert: string, notiz: string, von: st
   return BLAETTER.Erklaerung.map((s) => w[s] ?? '')
 }
 
+// ---------------------------------------------------------------- eigene Stichwörter (Zuordnung)
+
+export function stichwoerterAus(zeilen: Zeile[]): Stichwort[] {
+  return zeilen.map((z) => { const g = lies('Stichwoerter', z); return { stichwort: g('stichwort'), modul: g('modul'), kategorie: g('kategorie') } }).filter((x) => x.stichwort && x.modul)
+}
+export function zeileAusStichwort(s: Stichwort, von: string, am: string): Zelle[] {
+  const w: Record<string, Zelle> = { ...s, geaendert_von: von, geaendert_am: am }
+  return BLAETTER.Stichwoerter.map((x) => w[x] ?? '')
+}
+
 export interface Stamm {
   objekte: Objekt[]
   einheiten: Einheit[]
@@ -155,9 +166,10 @@ export interface Stamm {
   bescheid: BescheidPosten[]
   bescheidKopf: BescheidKopf
   antworten: Antworten
+  stichwoerter: Stichwort[]
 }
 
-export const LEER: Stamm = { objekte: [], einheiten: [], einnahmen: [], aufteilung: [], kinder: [], fahrten: [], arbeitstage: [], pdfOffen: [], vorlagen: [], buchungen: [], bescheid: [], bescheidKopf: LEERER_KOPF, antworten: {} }
+export const LEER: Stamm = { objekte: [], einheiten: [], einnahmen: [], aufteilung: [], kinder: [], fahrten: [], arbeitstage: [], pdfOffen: [], vorlagen: [], buchungen: [], bescheid: [], bescheidKopf: LEERER_KOPF, antworten: {}, stichwoerter: [] }
 
 export function stammAus(blaetter: Record<string, Zeile[]>): Stamm {
   const voll = (l: Zeile[] | undefined) => (l ?? []).filter((z) => z[0] !== undefined && z[0] !== '')
@@ -174,6 +186,7 @@ export function stammAus(blaetter: Record<string, Zeile[]>): Stamm {
     buchungen: voll(blaetter.Buchungen).map(buchungAusZeile),
     bescheid: voll(blaetter.Bescheid).filter((z) => z[0] !== KOPF_ID).map(bescheidAusZeile),
     antworten: antwortenAus(voll(blaetter.Erklaerung)),
+    stichwoerter: stichwoerterAus(voll(blaetter.Stichwoerter)),
     bescheidKopf: kopfAusZeile(voll(blaetter.Bescheid).find((z) => z[0] === KOPF_ID)),
   }
 }

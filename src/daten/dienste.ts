@@ -1,4 +1,5 @@
 // Verdrahtung der Synchronisierung mit Google und IndexedDB sowie automatischer Start.
+import type { Stichwort } from '../fachlich/zuordnung'
 import { AKTUELLES_JAHR, KONFIGURATIONEN } from '../konfig'
 import { istAngemeldet } from '../google/auth'
 import { datei, findeBelegDatei, findeInOrdner, holeOderErstellePfad, ladeHoch, ladeHochGross, ORDNER_MIME, SHEET_MIME, verschiebeDatei } from '../google/drive'
@@ -7,7 +8,7 @@ import { gespeicherteWurzel, richteEin } from './einrichtung'
 import { belegCache, melde, warteschlange } from './speicher'
 import { findeIndex, ladeBelege, synchronisiere, SyncFehler, type SyncDienste, type SyncErgebnis } from './sync'
 import {
-  LEER, stammAus, zeileAusArbeitstage, zeileAusEinheit, zeileAusEinnahme, zeileAusFahrt, zeileAusKind, zeileAusObjekt, zeileAusVorlage, zeileAusBuchung, zeileAusBescheid, zeileAusKopf, zeileAusAntwort, type Stamm,
+  LEER, stammAus, zeileAusArbeitstage, zeileAusEinheit, zeileAusEinnahme, zeileAusFahrt, zeileAusKind, zeileAusObjekt, zeileAusVorlage, zeileAusBuchung, zeileAusBescheid, zeileAusKopf, zeileAusAntwort, zeileAusStichwort, type Stamm,
 } from './stamm'
 import type { Vorlage } from '../fachlich/vorlagen'
 import { KOPF_ID, type BescheidKopf, type BescheidPosten } from '../fachlich/bescheid'
@@ -79,7 +80,7 @@ export function automatischerSync() {
 // ---------------------------------------------------------------- Stammdaten Anlage V (online)
 
 
-const STAMM_BLAETTER = ['Objekte', 'Einheiten', 'Einnahmen', 'Aufteilung', 'Kinder', 'Fahrten', 'Arbeitstage', 'Auftraege', 'Vorlagen', 'Buchungen', 'Bescheid', 'Erklaerung']
+const STAMM_BLAETTER = ['Objekte', 'Einheiten', 'Einnahmen', 'Aufteilung', 'Kinder', 'Fahrten', 'Arbeitstage', 'Auftraege', 'Vorlagen', 'Buchungen', 'Bescheid', 'Erklaerung', 'Stichwoerter']
 
 export async function ladeStamm(jahr: number): Promise<Stamm> {
   const { indexId } = await findeIndex(jahr, dienste)
@@ -292,4 +293,18 @@ export async function legeJahrAn(jahr: number, fortschritt: (t: string) => void)
   const e = await richteEin(KONFIGURATIONEN[jahr], fortschritt, await datei(wurzel))
   await aktualisiereBelege(jahr).catch(() => undefined)
   return e
+}
+
+// ---------------------------------------------------------------- eigene Stichwörter (Zuordnung)
+
+/** Speichert ein eigenes Stichwort (Schlüssel = Stichwort in Kleinschreibung) oder löscht es. */
+export async function speichereStichwort(jahr: number, s: Stichwort, loeschen = false) {
+  const { indexId } = await findeIndex(jahr, dienste)
+  const x = { ...s, stichwort: s.stichwort.trim().toLowerCase() }
+  if (loeschen) await ersetzeZeile(indexId, 'Stichwoerter', x.stichwort, null)
+  else {
+    const z = zeileAusStichwort(x, nutzerEmail(), new Date().toISOString())
+    if (!(await ersetzeZeile(indexId, 'Stichwoerter', x.stichwort, z))) await haengeAn(indexId, 'Stichwoerter', [z])
+  }
+  return ladeStamm(jahr)
 }

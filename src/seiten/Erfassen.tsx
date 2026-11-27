@@ -20,7 +20,8 @@ import { nimmVorgemerkte } from '../erfassung/uebergabe'
 import { OCR_AUS, textAusBild, textAusPdf, type OcrStand } from '../erfassung/ocr'
 import { werteAus, zuordnungNachAussteller } from '../fachlich/texterkennung'
 import { vorlageMarke } from '../fachlich/vorlagen'
-import { AusstellerVorschlag, OcrVorschlaege } from '../komponenten/Vorschlaege'
+import { AusstellerVorschlag, OcrVorschlaege, StichwortVorschlag } from '../komponenten/Vorschlaege'
+import { objektNachText, vorschlagNachStichwort } from '../fachlich/zuordnung'
 
 type Eintrag =
   | (Seite & { art: 'bild'; bildUrl: string })
@@ -158,6 +159,18 @@ export default function Erfassen() {
   }
 
   const zuordnung = useMemo(() => zuordnungNachAussteller(e.aussteller, belege), [e.aussteller, belege])
+  const belegText = `${e.aussteller}\n${ocr.status === 'fertig' ? ocr.text : ''}`
+  const stichwort = useMemo(() => (zuordnung ? null : vorschlagNachStichwort(belegText, stamm.stichwoerter ?? [], KONFIGURATIONEN[AKTUELLES_JAHR])), [zuordnung, belegText, stamm.stichwoerter])
+  const objektTreffer = useMemo(() => objektNachText(belegText, stamm.objekte), [belegText, stamm.objekte])
+  const objektEbene = (m: string) => KONFIGURATIONEN[AKTUELLES_JAHR].module.find((x) => x.id === m)?.ebene === 'objekt'
+  const zielModul = stichwort?.modul || e.modul || (objektTreffer ? 'V' : '')
+  const objektVorschlag = objektTreffer && objektEbene(zielModul) && e.objekt_id !== objektTreffer.id ? objektTreffer : null
+  const stichwortOffen = !!stichwort && (e.modul !== stichwort.modul || e.kategorie !== stichwort.kategorie)
+  const uebernimmStichwort = () => setE((a) => ({
+    ...a,
+    ...(stichwortOffen && stichwort ? { modul: stichwort.modul, kategorie: stichwort.kategorie } : {}),
+    ...(objektVorschlag ? { modul: stichwortOffen && stichwort ? stichwort.modul : a.modul || 'V', objekt_id: objektVorschlag.id, einheit_id: '', aufteilung: [] } : {}),
+  }))
   const zuordnungOffen = !!zuordnung && (e.modul !== zuordnung.modul || e.kategorie !== zuordnung.kategorie || e.objekt_id !== zuordnung.objekt_id || e.kind_id !== zuordnung.kind_id)
 
   const speichere = async () => {
@@ -245,6 +258,9 @@ export default function Erfassen() {
               einheit_id: zuordnung.einheit_id, umlagefaehig: zuordnung.umlagefaehig, kind_id: zuordnung.kind_id,
               zahlungsart: zuordnung.zahlungsart, aufteilung: [],
             }))} />
+          )}
+          {(stichwortOffen || objektVorschlag) && (
+            <StichwortVorschlag s={stichwortOffen ? stichwort : null} objekt={objektVorschlag} uebernimm={uebernimmStichwort} />
           )}
           {duplikate.length > 0 && (
             <div className="warnung">
