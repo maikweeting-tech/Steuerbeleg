@@ -6,7 +6,7 @@ import { speichereAntwort } from '../daten/dienste'
 import { useStamm } from '../komponenten/hooks'
 import { istAngemeldet } from '../google/auth'
 import {
-  anzeigeWert, bereiche, fortschritt, gesamtFortschritt, hinweisText, klaeren, naechsteOffene, sichtbar, unterlagen, WEISS_NICHT,
+  anzeigeWert, bereiche, einnahmenJeObjekt, fortschritt, gesamtFortschritt, hinweisText, klaeren, naechsteOffene, sichtbar, unterlagen, WEISS_NICHT,
   type Antwort, type Frage,
 } from '../fachlich/assistent'
 
@@ -53,7 +53,11 @@ export default function Erklaerung() {
   const stamm = useStamm(AKTUELLES_JAHR)
   const online = istAngemeldet()
   const a = stamm.antworten
-  const liste = bereiche(AKTUELLES_JAHR, a)
+  const kontext = {
+    objekte: stamm.objekte.filter((o) => o.aktiv),
+    einnahmenCt: einnahmenJeObjekt(AKTUELLES_JAHR, stamm.einnahmen),
+  }
+  const liste = bereiche(AKTUELLES_JAHR, a, kontext)
   const [offenId, setOffenId] = useState<string | null>(null)
   const offen = liste.find((b) => b.id === offenId) ?? null
   const [laeuft, setLaeuft] = useState(false)
