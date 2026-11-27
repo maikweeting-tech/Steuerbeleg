@@ -22,6 +22,8 @@ import { werteAus, zuordnungNachAussteller } from '../fachlich/texterkennung'
 import { vorlageMarke } from '../fachlich/vorlagen'
 import { AusstellerVorschlag, OcrVorschlaege, StichwortVorschlag } from '../komponenten/Vorschlaege'
 import { objektNachText, vorschlagNachStichwort } from '../fachlich/zuordnung'
+import { ausDateiname } from '../fachlich/eingang'
+import { ladeInhalt } from '../google/drive'
 
 type Eintrag =
   | (Seite & { art: 'bild'; bildUrl: string })
@@ -45,6 +47,8 @@ export default function Erfassen() {
   const [ocr, setOcr] = useState<OcrStand>(OCR_AUS)
   const [stand, setStand] = useState(0)
   const ocrLauf = useRef(0)
+  // Aus dem Eingang (?eingang=<Drive-Id>&name=…): die PDF liegt schon in Drive und wird beim Übertragen nur verschoben
+  const [quelle, setQuelle] = useState<{ id: string; name: string } | null>(null)
 
   const fuegeHinzu = useCallback(async (dateien: File[] | Blob[]) => {
     setFehler('')
@@ -96,6 +100,23 @@ export default function Erfassen() {
       if (d) setZahlungGeaendert(true)
     }
   }, [ort.search, stamm.vorlagen])
+
+  // PDF aus dem Eingang laden (für Vorschau und Texterkennung); Datum/Absender aus dem Dateinamen vorschlagen
+  const eingangGeladen = useRef('')
+  useEffect(() => {
+    const q = new URLSearchParams(ort.search)
+    const id = q.get('eingang')
+    if (!id || eingangGeladen.current === id) return
+    eingangGeladen.current = id
+    const name = q.get('name') ?? 'Eingang.pdf'
+    setLaeuft('PDF wird aus Drive geladen …')
+    void ladeInhalt(id).then(({ daten, mimeType }) => {
+      setSeiten([{ art: 'pdf', id: neueId(), datei: new Blob([daten], { type: mimeType || 'application/pdf' }), name }])
+      setQuelle({ id, name })
+      const v = ausDateiname(name)
+      setE((a) => ({ ...a, aussteller: a.aussteller || v.absender, belegdatum: a.belegdatum || v.datum, zahlungsdatum: a.zahlungsdatum || v.datum }))
+    }).catch((x) => setFehler(`PDF aus dem Eingang nicht ladbar: ${x instanceof Error ? x.message : String(x)}`)).finally(() => setLaeuft(''))
+  }, [ort.search])
 
   // Über das Teilen-Menü (Android) geschickte Dateien übernehmen
   useEffect(() => {
@@ -179,6 +200,17 @@ export default function Erfassen() {
     setLaeuft('PDF wird erstellt …')
     setFehler('')
     try {
+      if (quelle && seiten[0]?.art === 'pdf') {
+        // Eingang: keine neue PDF, die vorhandene Datei wird beim Übertragen umbenannt und verschoben
+        const { seiten: anzahl } = await erstellePdf([{ art: 'pdf', daten: await seiten[0].datei.arrayBuffer() }])
+        await warteschlange.speichere({
+          id: e.id, entwurf: { ...e, steuerjahr: wirksamesSteuerjahr(e) }, pdf: null, quelle, seiten: anzahl,
+          erfasst_von: nutzerEmail(), erfasst_am: new Date().toISOString(), versuche: 0,
+        })
+        void starteSync()
+        navigate('/eingang', { state: { meldung: `Beleg gespeichert. Die PDF wird beim Übertragen in den passenden Ordner verschoben.` } })
+        return
+      }
       const teile: Teil[] = []
       for (const s of seiten) {
         if (s.art === 'pdf') teile.push({ art: 'pdf', daten: await s.datei.arrayBuffer() })
@@ -211,7 +243,9 @@ export default function Erfassen() {
 
       <div className="karte">
         <h2>1. Seiten</h2>
-        <div className="zeile">
+        {quelle && <p className="klein">PDF aus dem Eingang: <a href={`https://drive.google.com/file/d/${quelle.id}/view`} target="_blank" rel="noreferrer">{quelle.name} ansehen</a>. Sie wird nicht neu erstellt, sondern beim Übertragen umbenannt und in den passenden Ordner verschoben.</p>}
+        {quelle && <iframe title="Vorschau" src={`https://drive.google.com/file/d/${quelle.id}/preview`} style={{ width: '100%', height: 420, border: '1px solid #ccc', borderRadius: 6 }} />}
+        {!quelle && <div className="zeile">
           <label className="knopf gross-foto">
             <input type="file" accept="image/*" capture="environment" hidden onChange={(x) => { void fuegeHinzu([...(x.target.files ?? [])]); x.target.value = '' }} />
             <span>📷 {seiten.length ? 'Weitere Seite fotografieren' : 'Foto aufnehmen'}</span>
@@ -220,8 +254,8 @@ export default function Erfassen() {
             <input type="file" accept="image/*,application/pdf" multiple hidden onChange={(x) => { void fuegeHinzu([...(x.target.files ?? [])]); x.target.value = '' }} />
             <span>Datei / Galerie</span>
           </label>
-        </div>
-        <p className="klein">Mehrseitige Belege: einfach weitere Fotos aufnehmen. Die Seiten werden zu einer PDF zusammengefügt.</p>
+        </div>}
+        {!quelle && <p className="klein">Mehrseitige Belege: einfach weitere Fotos aufnehmen. Die Seiten werden zu einer PDF zusammengefügt.</p>}
         {seiten.length > 0 && (
           <div className="seiten">
             {seiten.map((s, i) => (
@@ -232,7 +266,7 @@ export default function Erfassen() {
                   {s.art === 'bild' && <button className="zweit" title="Drehen" onClick={() => void aendereSeite(s.id, (x) => ({ ...x, drehung: ((x.drehung + 90) % 360) as Seite['drehung'], zuschnitt: VOLL }))}>⟳</button>}
                   {s.art === 'bild' && <button className="zweit" title="Zuschneiden" onClick={() => setBearbeite(s.id)}>✂</button>}
                   {i > 0 && <button className="zweit" title="Nach vorn" onClick={() => nachVorn(i)}>◀</button>}
-                  <button className="zweit" title="Entfernen" onClick={() => entferne(s.id)}>✕</button>
+                  {!quelle && <button className="zweit" title="Entfernen" onClick={() => entferne(s.id)}>✕</button>}
                 </div>
                 {s.art === 'bild' && (
                   <select value={s.filter} onChange={(x) => void aendereSeite(s.id, (y) => ({ ...y, filter: x.target.value as Filter }))}>
@@ -286,7 +320,7 @@ export default function Erfassen() {
       {fehler && <p className="fehler">{fehler}</p>}
       <div className="zeile">
         <button disabled={!!laeuft} onClick={() => void speichere()}>{laeuft || 'Beleg speichern'}</button>
-        <button className="zweit" disabled={!!laeuft} onClick={() => navigate('/belege')}>Abbrechen</button>
+        <button className="zweit" disabled={!!laeuft} onClick={() => navigate(quelle ? '/eingang' : '/belege')}>Abbrechen</button>
       </div>
     </>
   )
