@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { abmelden, holeNutzer, istAngemeldet, letzterAnmeldeFehler, starteAnmeldung, stilleAnmeldungMoeglich, type Nutzer } from '../google/auth'
 import { fehlendeKennungen } from '../google/umgebung'
-import { richteEin, sucheWurzel, speichereWurzel, type Ergebnis } from '../daten/einrichtung'
+import { richteEin, sucheWurzel, speichereWurzel, verbindeOrdnerPerLink, type Ergebnis } from '../daten/einrichtung'
 import { findeWurzeln, kinder, type DriveDatei } from '../google/drive'
 import { KONFIGURATIONEN, AKTUELLES_JAHR } from '../konfig'
 import { belegindexName } from '../daten/schema'
@@ -22,6 +22,7 @@ export default function Start() {
   const [pruefung, setPruefung] = useState<string[] | null>(null)
   const [meldung, setMeldung] = useState('')
   const [fremde, setFremde] = useState<DriveDatei[]>([])
+  const [link, setLink] = useState('')
   const fehlend = fehlendeKennungen()
   const { wartend, belege } = useDaten(konfig.steuerjahr)
 
@@ -128,7 +129,25 @@ export default function Start() {
               </ul>
             </>
           ) : (
-            <p>Noch kein Ordner „Steuer“ gefunden. Wurde er für dich freigegeben? Sonst neu anlegen.</p>
+            <div className="warnung">
+              <strong>Kein Ordner „Steuer“ gefunden.</strong> Wenn der Ordner schon bei deinem Partner bzw. deiner Partnerin liegt:
+              <ol className="liste" style={{ margin: '6px 0' }}>
+                <li>Dort in Google Drive den Ordner „Steuer“ für dich freigeben, Recht <strong>„Bearbeiter“</strong>.</li>
+                <li>Hier „Erneut suchen“ tippen – oder den Link zum Ordner unten einfügen.</li>
+              </ol>
+              <div className="zeile">
+                <button disabled={!!laeuft} onClick={() => aufgabe('Suche …', nachAnmeldung)}>Erneut suchen</button>
+              </div>
+              <label className="feld" style={{ marginTop: 8 }}><span>Link zum Ordner (aus Drive oder der Freigabe-Mail)</span>
+                <input value={link} onChange={(x) => setLink(x.target.value)} placeholder="https://drive.google.com/drive/folders/…" />
+              </label>
+              <button className="zweit" disabled={!!laeuft || !link.trim()} onClick={() => aufgabe('Verbinde …', async () => {
+                const d = await verbindeOrdnerPerLink(link)
+                setWurzel(d); setLink('')
+                await aktualisiereBelege(konfig.steuerjahr).catch(() => undefined)
+                setMeldung(`Ordner verbunden (Eigentümer: ${d.ownedByMe ? 'ich' : d.owners?.[0]?.displayName ?? 'andere Person'}).`)
+              })}>Ordner verbinden</button>
+            </div>
           )}
           <div className="zeile">
             {wurzel && (
@@ -137,10 +156,13 @@ export default function Start() {
               })}>Struktur {konfig.steuerjahr} prüfen / ergänzen</button>
             )}
             {!wurzel && !kandidaten.length && (
-              <button disabled={!!laeuft} onClick={() => aufgabe('Einrichtung …', async () => {
-                const e = await richteEin(konfig, setLaeuft, null)
-                setWurzel(e.wurzel); setErgebnis(e)
-              })}>Neu anlegen (Steuer/{konfig.steuerjahr})</button>
+              <details style={{ marginTop: 8 }}>
+                <summary className="klein">Ich bin die erste Person – Ordner neu anlegen</summary>
+                <button className="zweit" disabled={!!laeuft} onClick={() => aufgabe('Einrichtung …', async () => {
+                  const e = await richteEin(konfig, setLaeuft, null)
+                  setWurzel(e.wurzel); setErgebnis(e)
+                })}>Neu anlegen (Steuer/{konfig.steuerjahr})</button>
+              </details>
             )}
             {wurzel && (
               <button className="zweit" disabled={!!laeuft} onClick={() => { speichereWurzel(null); setWurzel(null); aufgabe('Suche …', nachAnmeldung) }}>
