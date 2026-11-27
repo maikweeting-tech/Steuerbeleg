@@ -1,6 +1,6 @@
 # Steuerbeleg-App – Umsetzungsplan (Entwurf zur Freigabe)
 
-Stand: 27.11.2026 (Ergänzungen E1–E6) · Repository: `maikweeting-tech/Steuerbeleg` · Adresse später: `https://maikweeting-tech.github.io/Steuerbeleg/`
+Stand: 27.11.2026 (Ergänzungen E1–E13) · Repository: `maikweeting-tech/Steuerbeleg` · Adresse später: `https://maikweeting-tech.github.io/Steuerbeleg/`
 
 > Die App ersetzt keine Steuerberatung. Sie berechnet keine Steuer und übermittelt nichts an ELSTER.
 
@@ -147,12 +147,12 @@ Steuerbeleg/
 |---|---|---|
 | 1 | Setup-Anleitung, Grundgerüst PWA, Anmeldung, Ordneranlage in Drive, Actions-Workflow | ✓ weitgehend erledigt, offen: Handy-Installation, Annas Doppelordner |
 | 2 | Beleg erfassen (Foto mehrseitig, Zuschneiden, Kontrast, PDF, Teilen-Menü), Pflichtfelder, Dateiname, Belegindex, **Offline-Erfassung (E2)**, **Duplikat-Warnung (E1)** | Beleg fotografieren → Drive → Zeile im Sheet; Flugmodus → später hochgeladen; gleichen Beleg zweimal → Warnung |
-| 3 | Anlage V + Kamperland, Objekte/Einheiten, Aufteilung in %, **V+V je Objekt: Einnahmen gegen Kosten, AfA-Grunddaten (E4)** | Beleg auf zwei Objekte aufteilen; Objektübersicht Einnahmen/Kosten nachrechnen |
-| 4 | Anlage N mit Fahrtenbuch, **Pauschalen-Zähler Homeoffice-Tage/Arbeitstage/km (E3)**, Kind, Sonderausgaben, § 35a | Fahrten und Tage erfassen, Zähler stimmen; § 35a bar → Warnung |
-| 5 | Texterkennung, Vorschläge nach Aussteller | Datum/Betrag/Aussteller werden vorgeschlagen |
-| 6 | Vollständigkeits-Check, Kalender-Erinnerung, **wiederkehrende Belege (E6)**, Suche/Filter | Fehlende Belege rot, Termin im Kalender, Vorlage monatlich bestätigen |
-| 7 | Exporte: Checkliste PDF, Excel (SUMMEWENNS, Blätter Annahmen/Prüfung), Belegmappe, **Jahresübergabe als ZIP mit PDF-Übersicht (E5)** | Summen stichprobenartig nachrechnen, ZIP öffnen |
-| 8 | Testdatensatz, Abnahmetest, Kurzanleitung | Abnahme: Handyfoto → Drive → Index → Excel-Summe |
+| 3 | Anlage V + Kamperland, Objekte/Einheiten, Aufteilung in %, **V+V je Objekt: Einnahmen gegen Kosten, AfA-Grunddaten (E4)**, **umlagefähige Kosten je Einheit (E9)** | Beleg auf zwei Objekte aufteilen; Objektübersicht Einnahmen/Kosten nachrechnen |
+| 4 | Anlage N mit Fahrtenbuch, **Pauschalen-Zähler Homeoffice-Tage/Arbeitstage/km (E3)**, Kind, Sonderausgaben, § 35a, **Module agB und KAP (E8)** | Fahrten und Tage erfassen, Zähler stimmen; § 35a bar → Warnung |
+| 5 | Texterkennung, Vorschläge nach Aussteller, **§ 35a Lohnanteil-Vorschlag (E13)** | Datum/Betrag/Aussteller werden vorgeschlagen |
+| 6 | Vollständigkeits-Check, Kalender-Erinnerung, **wiederkehrende Belege (E6)**, **Kontoauszug-Abgleich (E7)**, **Fragen-Markierung (E10)**, Suche/Filter | Fehlende Belege rot, Termin im Kalender, Vorlage monatlich bestätigen |
+| 7 | Exporte: Checkliste PDF, Excel (SUMMEWENNS, Blätter Annahmen/Prüfung), Belegmappe, **Jahresübergabe als ZIP mit PDF-Übersicht (E5)**, **NK-Vorlage (E9)**, **Fragenliste (E10)**, **Jahresvergleich (E11)** | Summen stichprobenartig nachrechnen, ZIP öffnen |
+| 8 | Testdatensatz, Abnahmetest, Kurzanleitung, **Bescheid-Abgleich (E12)** | Abnahme: Handyfoto → Drive → Index → Excel-Summe |
 
 Hinweis Excel: Formeln werden in der Datei englisch gespeichert (`SUMIFS`). Ein deutsches Excel zeigt sie automatisch als `SUMMEWENNS` an. Die Tests prüfen, dass die Formeln vorhanden sind, und rechnen die Ergebnisse unabhängig nach.
 
@@ -168,8 +168,16 @@ Hinweis Excel: Formeln werden in der Datei englisch gespeichert (`SUMIFS`). Ein 
 | E4 | V+V je Objekt | M3 | Neues Blatt **Einnahmen** (Miete monatlich je Objekt/Einheit). Übersicht je Objekt: Summe Einnahmen, Summe Kosten. AfA nur Grunddaten (Kaufpreis, Anschaffungsdatum, Baujahr, Gebäudeanteil, AfA-Satz als Info „prüfen“), **keine AfA-Berechnung**. |
 | E5 | Jahresübergabe als ZIP | M7 | ZIP wird im Browser erzeugt: alle Belegdateien nach Modul geordnet, PDF-Übersicht, Excel. Speicherort: Ordner `Export` in Drive und Download. Bei sehr vielen Fotos (> ca. 300 MB) kann es am Handy langsam werden, dann am PC erzeugen. |
 | E6 | Wiederkehrende Belege | M6 | Neues Blatt **Vorlagen**. Die App zeigt fällige Vorlagen, du bestätigst mit einem Tipp → Zeile im Belegindex mit Verweis auf einen Dauerbeleg (z. B. Versicherungsschein, Kita-Bescheid), Betrag änderbar. |
+| E7 | Kontoauszug-Abgleich (CSV) | M6 | CSV aus dem Online-Banking wird im Browser gelesen. Treffer = gleicher Betrag und Datum ± 5 Tage. Ergebnis: Liste „Zahlung ohne Beleg“. **Offen:** Bank und CSV-Format (Beispieldatei mit geschwärzten Daten nötig). Die CSV wird nicht dauerhaft gespeichert, nur markierte Buchungen im Blatt **Buchungen**. |
+| E8 | Module agB und KAP | M4 | Zusätzliche Module in der Konfigurationsdatei: Außergewöhnliche Belastungen (Krankheit, Pflege) und Anlage KAP (Jahressteuerbescheinigungen). Kategorien und Zeilen als Platzhalter „prüfen“. Keine Berechnung der zumutbaren Belastung. |
+| E9 | Umlagefähige Kosten je Einheit | M3, Export M7 | Kategorie bzw. Beleg als „umlagefähig“ markieren, Verteilschlüssel je Objekt (Wohnfläche, Personen, Einheiten oder fest in %) legst du selbst fest. Ergebnis ist eine Excel-Vorlage, **keine** rechtssichere Nebenkostenabrechnung. |
+| E10 | Fragen an den Steuerberater | M6, Export M7 | Neue Spalte `frage` am Ende des Blatts Belege (bestehende Zeilen bleiben gültig). Export als PDF/Excel mit Link zum Beleg. |
+| E11 | Jahresvergleich | M7 | Summen je Modul/Kategorie gegenüber dem Vorjahres-Belegindex. Sinnvoll ab Steuerjahr 2027. |
+| E12 | Bescheid-Abgleich | M8 | Neues Blatt **Bescheid**: Posten laut Erklärung, laut Bescheid, Abweichung, Notiz. Nur Erfassung, keine Bewertung. Einspruchsfrist trägst du selbst ein (Wert „prüfen“). |
+| E13 | § 35a Lohnanteil-Vorschlag | M5 | Texterkennung sucht Begriffe wie „Lohn“, „Arbeitskosten“, „Material“ und schlägt Beträge vor; du bestätigst. Summe Arbeit + Material = Brutto wird geprüft. |
 
 ## 8. Noch offen
 
-1. Ergänzungen E1–E6 und ihre Zuordnung so in Ordnung?
+1. Ergänzungen E7–E13 und ihre Zuordnung so in Ordnung? (E1–E6 freigegeben 27.11.2026)
+3. Für E7: Welche Bank? Beispiel-CSV (Namen/IBAN geschwärzt) wird in M6 gebraucht.
 2. Abschluss M1: Handy-Installation (Test 9), Annas Doppelordner löschen.
