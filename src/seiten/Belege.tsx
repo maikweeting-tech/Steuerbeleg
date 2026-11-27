@@ -90,7 +90,7 @@ export default function Belege() {
                   <td>{formatDatum(b.belegdatum)}</td>
                   <td>
                     {b.datei_ids ? <a href={`https://drive.google.com/file/d/${b.datei_ids.split(',')[0]}/view`} target="_blank" rel="noreferrer">{b.aussteller}</a> : b.aussteller}
-                    <div className="klein">{modulName(b.modul)}{b.kategorie ? ` · ${katName(b.modul, b.kategorie)}` : ''}{objektText(b.id, b.objekt_id)}{b.kind_id ? ` · ${stamm.kinder.find((k) => k.id === b.kind_id)?.name ?? 'Kind?'}` : ''} · {personName(b.person)}{b.status !== 'offen' ? ` · ${b.status}` : ''}</div>
+                    <div className="klein">{modulName(b.modul)}{b.kategorie ? ` · ${katName(b.modul, b.kategorie)}` : ''}{objektText(b.id, b.objekt_id)}{b.kind_id ? ` · ${stamm.kinder.find((k) => k.id === b.kind_id)?.name ?? 'Kind?'}` : ''} · {personName(b.person)}{b.status !== 'offen' ? ` · ${b.status}` : ''}{stamm.pdfOffen.includes(b.id) ? ' · ⏳ PDF wird noch verschoben' : ''}</div>
                   </td>
                   <td className="betrag">{formatEuro(b.betrag_ct ?? 0)}</td>
                 </tr>

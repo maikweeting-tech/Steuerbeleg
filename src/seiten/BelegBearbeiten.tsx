@@ -43,8 +43,9 @@ export default function BelegBearbeiten() {
     setFehler('')
     setLaeuft(true)
     try {
-      await aendereBelegOnline(AKTUELLES_JAHR, alt, e)
-      navigate('/belege', { state: { meldung: `✓ Beleg Nr. ${alt.belegnr} geändert (${liste.length} Feld${liste.length === 1 ? '' : 'er'}).` } })
+      const b = await aendereBelegOnline(AKTUELLES_JAHR, alt, e)
+      const zusatz = b.pdfOffen ? ' Die PDF gehört einer anderen Person; sie wird verschoben, sobald diese Person die App öffnet.' : ''
+      navigate('/belege', { state: { meldung: `✓ Beleg Nr. ${alt.belegnr} geändert (${liste.length} Feld${liste.length === 1 ? '' : 'er'}).${zusatz}` } })
     } catch (x) {
       setFehler(x instanceof Error ? x.message : String(x))
     } finally {

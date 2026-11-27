@@ -21,7 +21,7 @@ export interface BearbeitenDienste {
   leereZeilen: (sheetId: string, blatt: string, id: string) => Promise<number>
   haengeAn: (sheetId: string, blatt: string, zeilen: Zelle[][]) => Promise<void>
   holeOderErstellePfad: (pfad: string[], elternId: string) => Promise<{ id: string }>
-  verschiebeDatei: (id: string, name: string, ordnerId: string) => Promise<{ id: string; name: string }>
+  verschiebeDatei: (id: string, name: string, ordnerId: string) => Promise<{ id: string; name: string; offen?: boolean }>
 }
 
 /** Felder, die im Protokoll einzeln erscheinen. */
@@ -59,12 +59,17 @@ export async function aendereBeleg(alt: Beleg, neu: BelegEntwurf, d: BearbeitenD
 
   // 2. PDF umbenennen/verschieben (Belegnummer bleibt)
   let datei = { id: alt.datei_ids, name: alt.dateiname }
+  let auftrag: Zelle[] | null = null
   const name = dateiname(neu, alt.belegnr)
   const pfadAlt = zielOrdnerPfad(alt, d.konfig, d.stamm.objekte, d.stamm.kinder).join('/')
   const pfadNeu = zielOrdnerPfad(neu, d.konfig, d.stamm.objekte, d.stamm.kinder)
   if (alt.datei_ids && (name !== alt.dateiname || pfadNeu.join('/') !== pfadAlt)) {
+    const id = alt.datei_ids.split(',')[0]
     const ordner = await d.holeOderErstellePfad(pfadNeu, d.ordnerId)
-    datei = await d.verschiebeDatei(alt.datei_ids, name, ordner.id)
+    const erg = await d.verschiebeDatei(id, name, ordner.id)
+    datei = { id: alt.datei_ids, name }
+    // Google erlaubt das Verschieben meist nur dem Eigentümer: Auftrag hinterlegen, den dessen App erledigt
+    if (erg.offen) auftrag = [crypto.randomUUID(), 'verschieben', alt.id, id, pfadNeu.join('/'), name, d.nutzer(), d.jetzt(), '']
   }
 
   // 3. Aufteilung, Belegzeile, Protokoll
@@ -79,7 +84,38 @@ export async function aendereBeleg(alt: Beleg, neu: BelegEntwurf, d: BearbeitenD
   }
   if (!(await d.ersetzeZeile(d.indexId, 'Belege', alt.id, zeileAus(beleg)))) throw new KonfliktFehler('Belegzeile nicht gefunden.')
   await d.haengeAn(d.indexId, 'Protokoll', liste.map(([f, a, n]) => [jetzt, d.nutzer(), 'geändert', alt.id, f, a, n]))
-  return beleg
+  if (auftrag) await d.haengeAn(d.indexId, 'Auftraege', [auftrag])
+  return { ...beleg, pdfOffen: !!auftrag } as Beleg & { pdfOffen?: boolean }
+}
+
+// ---------------------------------------------------------------- Aufträge an den Eigentümer
+
+export interface Auftrag { id: string; beleg_id: string; datei_id: string; ziel_pfad: string; name: string; erledigt_am: string }
+
+export const auftragAusZeile = (z: Zelle[]): Auftrag => ({
+  id: String(z[0] ?? ''), beleg_id: String(z[2] ?? ''), datei_id: String(z[3] ?? ''), ziel_pfad: String(z[4] ?? ''), name: String(z[5] ?? ''), erledigt_am: String(z[8] ?? ''),
+})
+
+/** Erledigt offene Aufträge, soweit das eigene Konto die Datei verschieben darf. Gibt die Anzahl erledigter zurück. */
+export async function erledigeAuftraege(d: Pick<BearbeitenDienste, 'indexId' | 'ordnerId' | 'jetzt' | 'leseBlatt' | 'ersetzeZeile' | 'holeOderErstellePfad' | 'verschiebeDatei'>): Promise<number> {
+  const zeilen = await d.leseBlatt(d.indexId, 'Auftraege')
+  const offen = zeilen.filter((z) => z[0] && z[1] === 'verschieben' && !z[8]).map((z) => ({ z, a: auftragAusZeile(z) }))
+  // Mehrere Aufträge zur selben Datei: nur der letzte zählt, die älteren werden mit erledigt
+  const letzter = new Map(offen.map(({ a }) => [a.datei_id, a.id]))
+  let n = 0
+  for (const { z, a } of offen) {
+    try {
+      if (letzter.get(a.datei_id) === a.id) {
+        const ordner = await d.holeOderErstellePfad(a.ziel_pfad.split('/'), d.ordnerId)
+        if ((await d.verschiebeDatei(a.datei_id, a.name, ordner.id)).offen) continue
+      }
+      const neu = [...z]
+      neu[8] = d.jetzt()
+      await d.ersetzeZeile(d.indexId, 'Auftraege', a.id, neu)
+      n++
+    } catch { /* Datei weg o. Ä.: Auftrag bleibt sichtbar offen */ }
+  }
+  return n
 }
 
 /** Macht aus einem gespeicherten Beleg wieder einen Entwurf (für das Formular). */
