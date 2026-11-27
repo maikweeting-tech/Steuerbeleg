@@ -37,6 +37,8 @@ export const BLAETTER: Record<string, string[]> = {
   // ab M8: Bescheid-Abgleich (E12); Zeile mit id „kopf“ = Bescheiddatum und Einspruchsfrist
   // ab S1: Antworten des Erklärungs-Assistenten (id = Frage-Id)
   Erklaerung: ['id', 'wert', 'notiz', 'geaendert_von', 'geaendert_am'],
+  // eigene Stichwörter für die automatische Zuordnung beim Erfassen (id = Stichwort)
+  Stichwoerter: ['stichwort', 'modul', 'kategorie', 'geaendert_von', 'geaendert_am'],
   Bescheid: ['id', 'bezeichnung', 'modul', 'erklaerung_ct', 'bescheid_ct', 'notiz', 'bescheiddatum', 'einspruchsfrist', 'geaendert_von', 'geaendert_am'],
 }
 

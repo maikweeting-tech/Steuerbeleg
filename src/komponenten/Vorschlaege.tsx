@@ -79,3 +79,22 @@ export function AusstellerVorschlag({ z, stamm, uebernimm }: { z: Zuordnung & { 
     </div>
   )
 }
+
+/** Vorschlag aus Stichwort im Belegtext und/oder erkanntem Mietobjekt (nur wenn der Aussteller noch unbekannt ist). */
+export function StichwortVorschlag({ s, objekt, uebernimm }: {
+  s: { stichwort: string; modul: string; kategorie: string; eigen: boolean } | null
+  objekt: { id: string; bezeichnung: string; grund: string } | null
+  uebernimm: () => void
+}) {
+  if (!s && !objekt) return null
+  const modul = konfig.module.find((m) => m.id === s?.modul)
+  const kat = modul?.kategorien.find((k) => k.schluessel === s?.kategorie)?.name
+  return (
+    <div className="karte vorschlag">
+      <span className="klein">Vorschlag aus dem Belegtext{s ? ` (Stichwort „${s.stichwort}“${s.eigen ? ', eigenes' : ''})` : ''}{objekt ? ` – Objekt über ${objekt.grund} erkannt` : ''}:</span>{' '}
+      <strong>{[modul?.name.split(' – ')[0], kat, objekt?.bezeichnung].filter(Boolean).join(' › ')}</strong>{' '}
+      <button className="zweit" onClick={uebernimm}>Übernehmen</button>
+      <p className="klein">Bitte prüfen. Eigene Stichwörter: Seite „Check“.</p>
+    </div>
+  )
+}
