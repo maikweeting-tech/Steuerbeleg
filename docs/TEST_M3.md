@@ -6,7 +6,7 @@ Ergebnis je Zeile zurückmelden (ok / Screenshot vom Fehler). Die Beispielzahlen
 
 | Nr. | Wer | Schritt | Erwartung |
 |---|---|---|---|
-| 1 | Maik, PC | Oben neuer Menüpunkt **„Objekte“** öffnen | Seite „Anlage V – Objekte 2026“, Hinweis zu Kamperland |
+| 1 | Maik, PC | Oben neuer Menüpunkt **„Objekte“** öffnen | Seite „Anlage V – Objekte 2026“, Hinweis zu Yerseke |
 | 2 | Maik, PC | Neues Objekt anlegen, Bezeichnung z. B. `Kalkar Hauptstr` → „Anlegen“ | Objekt erscheint mit 0,00 €. In Drive: `Steuer/2026/V_Vermietung/Kalkar Hauptstr/` mit Kategorie-Unterordnern. Sheet: Blatt **Objekte** neue Zeile, neues Blatt **Einnahmen** vorhanden |
 | 3 | Maik, PC | Objekt antippen → Grunddaten ausfüllen (Adresse, Wohnfläche, Anschaffungsdatum, Kosten, Gebäudeanteil, Baujahr, AfA-Satz als Text) → speichern | „Gespeichert.“; nach „← Objekte“ und zurück sind die Werte noch da |
 | 4 | Maik, PC | Ggf. zweites Objekt anlegen (z. B. Garage) | Zwei Objekte in der Liste |

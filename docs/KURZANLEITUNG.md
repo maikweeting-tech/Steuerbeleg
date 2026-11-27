@@ -5,7 +5,7 @@ Die App ersetzt keine Steuerberatung. Sie berechnet keine Steuer und übermittel
 
 ## Einmalig
 1. **Start** → „Mit Google anmelden“ → Ordner **Steuer** verbinden (gemeinsamer Ordner, Anna hat Bearbeitungsrecht).
-2. **Objekte**: Kalkar Wissel und Kamperland mit Einheiten und Verteilschlüssel anlegen, Mieten eintragen.
+2. **Objekte**: Kalkar Wissel und Yerseke mit Einheiten und Verteilschlüssel anlegen, Mieten eintragen.
 3. **Kinder**, **Fahrten** (Arbeitstage, Entfernung, Homeoffice-Tage) eintragen.
 4. **Check** → Vorlagen für wiederkehrende Belege (Kita, Versicherungen, Grundsteuer) und erwartete Belege (Lohnsteuerbescheinigung) anlegen. Monatliche Erinnerung in den Kalender eintragen.
 

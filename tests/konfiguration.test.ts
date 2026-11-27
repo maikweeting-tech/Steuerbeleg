@@ -19,7 +19,7 @@ describe('Ordnerstruktur', () => {
   const pfade = ordnerPfade(konfig).map((p) => p.join('/'))
 
   it('legt alle Hauptordner aus der Spezifikation an', () => {
-    for (const o of ['V_Vermietung', 'AUS_Ausland', 'AUS_Ausland/Kamperland_NL', 'Kind', 'N_Maik', 'N_Anna',
+    for (const o of ['V_Vermietung', 'AUS_Ausland', 'AUS_Ausland/Yerseke_NL', 'Kind', 'N_Maik', 'N_Anna',
       'Sonderausgaben_Vorsorge', '35a_Haushalt_Handwerker', 'Sonstiges_ungeklaert', 'Export'])
       expect(pfade).toContain(o)
   })
