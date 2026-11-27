@@ -28,7 +28,7 @@ export function testDaten(): ExportDaten {
     ...LEER,
     objekte: [
       { id: 'oK', typ: 'V', bezeichnung: 'Kalkar Wissel', adresse: 'X-Str. 1', anschaffungsdatum: '2015-06-01', anschaffungskosten_ct: 25000000, afa_satz: '2 %', baujahr: 1985, gebaeudeanteil_prozent: 80, wohnflaeche_m2: 180, umlageschluessel: 'wohnflaeche', aktiv: true },
-      { id: 'oN', typ: 'V', bezeichnung: 'Kamperland', adresse: 'NL', anschaffungsdatum: '', anschaffungskosten_ct: null, afa_satz: '', baujahr: null, gebaeudeanteil_prozent: null, wohnflaeche_m2: null, umlageschluessel: 'einheiten', aktiv: true },
+      { id: 'oN', typ: 'V', bezeichnung: 'Yerseke', adresse: 'NL', anschaffungsdatum: '', anschaffungskosten_ct: null, afa_satz: '', baujahr: null, gebaeudeanteil_prozent: null, wohnflaeche_m2: null, umlageschluessel: 'einheiten', aktiv: true },
     ],
     einheiten: [
       { id: 'eEG', objekt_id: 'oK', bezeichnung: 'EG', wohnflaeche_m2: 100, personen: 2, fest_prozent: null },

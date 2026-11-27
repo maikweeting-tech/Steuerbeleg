@@ -92,7 +92,7 @@ export function ordnerPfade(
   }
   for (const z of konfig.zusatzordner) pfade.push([ordnerName(z)])
 
-  // Zwischenebenen (z. B. "AUS_Ausland" vor "Kamperland_NL") ergänzen, Duplikate entfernen,
+  // Zwischenebenen (z. B. "AUS_Ausland" vor "Yerseke_NL") ergänzen, Duplikate entfernen,
   // Eltern immer vor Kindern sortieren.
   const set = new Map<string, string[]>()
   for (const p of pfade) for (let i = 1; i <= p.length; i++) set.set(p.slice(0, i).join('/'), p.slice(0, i))

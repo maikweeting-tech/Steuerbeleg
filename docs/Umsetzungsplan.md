@@ -147,7 +147,7 @@ Steuerbeleg/
 |---|---|---|
 | 1 | Setup-Anleitung, Grundgerüst PWA, Anmeldung, Ordneranlage in Drive, Actions-Workflow | ✓ weitgehend erledigt, offen: Handy-Installation, Annas Doppelordner |
 | 2 | Beleg erfassen (Foto mehrseitig, Zuschneiden, Kontrast, PDF, Teilen-Menü), Pflichtfelder, Dateiname, Belegindex, **Offline-Erfassung (E2)**, **Duplikat-Warnung (E1)** | Beleg fotografieren → Drive → Zeile im Sheet; Flugmodus → später hochgeladen; gleichen Beleg zweimal → Warnung |
-| 3 | Anlage V + Kamperland, Objekte/Einheiten, Aufteilung in %, **V+V je Objekt: Einnahmen gegen Kosten, AfA-Grunddaten (E4)**, **umlagefähige Kosten je Einheit (E9)** | Beleg auf zwei Objekte aufteilen; Objektübersicht Einnahmen/Kosten nachrechnen |
+| 3 | Anlage V + Yerseke, Objekte/Einheiten, Aufteilung in %, **V+V je Objekt: Einnahmen gegen Kosten, AfA-Grunddaten (E4)**, **umlagefähige Kosten je Einheit (E9)** | Beleg auf zwei Objekte aufteilen; Objektübersicht Einnahmen/Kosten nachrechnen |
 | 4 | Anlage N mit Fahrtenbuch, **Pauschalen-Zähler Homeoffice-Tage/Arbeitstage/km (E3)**, Kind, Sonderausgaben, § 35a, **Module agB und KAP (E8)** | Fahrten und Tage erfassen, Zähler stimmen; § 35a bar → Warnung |
 | 5 | Texterkennung, Vorschläge nach Aussteller, **§ 35a Lohnanteil-Vorschlag (E13)** | Datum/Betrag/Aussteller werden vorgeschlagen |
 | 6 | Vollständigkeits-Check, Kalender-Erinnerung, **wiederkehrende Belege (E6)**, **Kontoauszug-Abgleich (E7)**, **Fragen-Markierung (E10)**, Suche/Filter | Fehlende Belege rot, Termin im Kalender, Vorlage monatlich bestätigen |

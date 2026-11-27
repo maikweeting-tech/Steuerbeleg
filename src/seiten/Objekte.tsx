@@ -28,7 +28,7 @@ export default function Objekte() {
   return (
     <>
       <h2 style={{ fontSize: '1.15rem' }}>Anlage V – Objekte {AKTUELLES_JAHR}</h2>
-      <p className="klein">Kamperland (NL) wird getrennt im Modul „Ausland“ geführt und erscheint hier nicht.</p>
+      <p className="klein">Yerseke (NL) wird getrennt im Modul „Ausland“ geführt und erscheint hier nicht.</p>
       {objekte.map((o) => {
         const s = objektSumme(o.id, belege, stamm.aufteilung, stamm.einnahmen, konfig)
         return (

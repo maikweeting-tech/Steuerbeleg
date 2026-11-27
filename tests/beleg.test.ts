@@ -48,8 +48,8 @@ describe('Pflichtfelder', () => {
 
 describe('Zielordner', () => {
   it('Anlage N je Person mit Kategorie', () => expect(zielOrdnerPfad(e({}), K)).toEqual(['N_Maik', 'Arbeitsmittel']))
-  it('Modul mit Unterordner (Kamperland)', () =>
-    expect(zielOrdnerPfad(e({ modul: 'AUS', kategorie: 'versicherung', person: 'gemeinsam' }), K)).toEqual(['AUS_Ausland', 'Kamperland_NL', 'Versicherung']))
+  it('Modul mit Unterordner (Yerseke)', () =>
+    expect(zielOrdnerPfad(e({ modul: 'AUS', kategorie: 'versicherung', person: 'gemeinsam' }), K)).toEqual(['AUS_Ausland', 'Yerseke_NL', 'Versicherung']))
   it('Anlage V vorerst Modulordner', () =>
     expect(zielOrdnerPfad(e({ modul: 'V', kategorie: 'grundsteuer' }), K)).toEqual(['V_Vermietung']))
   it('SONST ohne Kategorie', () => expect(zielOrdnerPfad(e({ modul: 'SONST', kategorie: '' }), K)).toEqual(['Sonstiges_ungeklaert']))

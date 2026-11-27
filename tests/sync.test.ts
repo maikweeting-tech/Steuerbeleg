@@ -56,7 +56,7 @@ describe('Synchronisierung', () => {
       '2026-03-14_B0001_Bäcker_10,00EUR.pdf',
       '2026-03-14_B0002_Bäcker_10,00EUR.pdf',
     ])
-    expect(f.dateien[1].eltern).toBe('O:AUS_Ausland/Kamperland_NL/Versicherung')
+    expect(f.dateien[1].eltern).toBe('O:AUS_Ausland/Yerseke_NL/Versicherung')
     expect(f.blaetter.Belege.length).toBe(2)
     expect(f.blaetter.Belege[1][BLAETTER.Belege.indexOf('belegnr')]).toBe(2)
     expect(f.blaetter.Protokoll[0].slice(2, 4)).toEqual(['erfasst', 'a'])
