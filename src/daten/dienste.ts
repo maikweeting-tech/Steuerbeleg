@@ -1,11 +1,11 @@
 // Verdrahtung der Synchronisierung mit Google und IndexedDB sowie automatischer Start.
 import { AKTUELLES_JAHR, KONFIGURATIONEN } from '../konfig'
 import { istAngemeldet } from '../google/auth'
-import { findeBelegDatei, findeInOrdner, holeOderErstellePfad, ladeHoch, ladeHochGross, ORDNER_MIME, SHEET_MIME, verschiebeDatei } from '../google/drive'
+import { datei, findeBelegDatei, findeInOrdner, holeOderErstellePfad, ladeHoch, ladeHochGross, ORDNER_MIME, SHEET_MIME, verschiebeDatei } from '../google/drive'
 import { ergaenzeBlaetter, ersetzeZeile, haengeAn, leereZeilen, leseBlatt } from '../google/sheets'
-import { gespeicherteWurzel } from './einrichtung'
+import { gespeicherteWurzel, richteEin } from './einrichtung'
 import { belegCache, melde, warteschlange } from './speicher'
-import { findeIndex, ladeBelege, synchronisiere, type SyncDienste, type SyncErgebnis } from './sync'
+import { findeIndex, ladeBelege, synchronisiere, SyncFehler, type SyncDienste, type SyncErgebnis } from './sync'
 import {
   LEER, stammAus, zeileAusArbeitstage, zeileAusEinheit, zeileAusEinnahme, zeileAusFahrt, zeileAusKind, zeileAusObjekt, zeileAusVorlage, zeileAusBuchung, zeileAusBescheid, zeileAusKopf, zeileAusAntwort, type Stamm,
 } from './stamm'
@@ -277,4 +277,19 @@ export async function speichereAntwort(jahr: number, id: string, wert: string, n
     if (!(await ersetzeZeile(indexId, 'Erklaerung', id, z))) await haengeAn(indexId, 'Erklaerung', [z])
   }
   return ladeStamm(jahr)
+}
+
+/** Gibt es Ordner und Belegindex des Jahres? null = unbekannt (offline, nicht angemeldet, kein Ordner verbunden). */
+export async function jahrAngelegt(jahr: number): Promise<boolean | null> {
+  if (!istAngemeldet() || !navigator.onLine || !gespeicherteWurzel()) return null
+  try { await findeIndex(jahr, dienste); return true } catch (e) { return e instanceof SyncFehler ? false : null }
+}
+
+/** Legt Ordnerstruktur und Belegindex eines Jahres im verbundenen Ordner „Steuer“ an. */
+export async function legeJahrAn(jahr: number, fortschritt: (t: string) => void) {
+  const wurzel = gespeicherteWurzel()
+  if (!wurzel) throw new Error('Kein Ordner „Steuer“ verbunden.')
+  const e = await richteEin(KONFIGURATIONEN[jahr], fortschritt, await datei(wurzel))
+  await aktualisiereBelege(jahr).catch(() => undefined)
+  return e
 }
