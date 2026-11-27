@@ -470,6 +470,121 @@
       ]
     },
     {
+      "id": "AGB",
+      "name": "Außergewöhnliche Belastungen",
+      "ordner": "agB_Aussergewoehnliche_Belastungen",
+      "ebene": "keine",
+      "kategorien": [
+        {
+          "schluessel": "krankheitskosten",
+          "name": "Krankheitskosten",
+          "art": "ausgabe",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "pflegekosten",
+          "name": "Pflegekosten",
+          "art": "ausgabe",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "behinderung_nachweis",
+          "name": "Behinderung (Nachweis)",
+          "art": "nachweis",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "bestattung",
+          "name": "Bestattungskosten",
+          "art": "ausgabe",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "sonstige_agb",
+          "name": "Sonstige außergewöhnliche Belastungen",
+          "art": "ausgabe",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        }
+      ]
+    },
+    {
+      "id": "KAP",
+      "name": "Anlage KAP – Kapitalerträge",
+      "ordner": "KAP_Kapitalertraege",
+      "ebene": "keine",
+      "kategorien": [
+        {
+          "schluessel": "jahressteuerbescheinigung",
+          "name": "Jahressteuerbescheinigung",
+          "art": "nachweis",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "verlustbescheinigung",
+          "name": "Verlustbescheinigung",
+          "art": "nachweis",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "auslaendische_ertraege",
+          "name": "Ausländische Erträge",
+          "art": "nachweis",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "sonstiges_kap",
+          "name": "Sonstiges KAP",
+          "art": "nachweis",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        }
+      ]
+    },
+    {
       "id": "SONST",
       "name": "Sonstiges / ungeklärt",
       "ordner": "Sonstiges_ungeklaert",
@@ -530,5 +645,6 @@
       "status": "prüfen"
     }
   },
-  "hinweis_umlage": "umlagefaehig_vorschlag ist nur ein Vorschlag (BetrKV), je Beleg änderbar – prüfen."
+  "hinweis_umlage": "umlagefaehig_vorschlag ist nur ein Vorschlag (BetrKV), je Beleg änderbar – prüfen.",
+  "hinweis_agb": "Keine Berechnung der zumutbaren Belastung. Kategorien und Zeilen sind Platzhalter – prüfen."
 }

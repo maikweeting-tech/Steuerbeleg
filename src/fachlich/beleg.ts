@@ -26,6 +26,12 @@ export interface BelegEntwurf {
   umlagefaehig: boolean
   /** leer = keine Aufteilung; sonst Anteile je Objekt/Einheit (Summe 100 %) */
   aufteilung: Anteil[]
+  // ab M4
+  kind_id: string
+  zahlungsart: '' | 'unbar' | 'bar'
+  /** § 35a: Lohn-/Arbeitskosten und Material, jeweils brutto */
+  arbeitskosten_ct: number | null
+  material_ct: number | null
 }
 
 export interface Beleg extends BelegEntwurf {
@@ -46,6 +52,7 @@ export function leererEntwurf(id: string): BelegEntwurf {
     id, belegdatum: '', zahlungsdatum: '', betrag_ct: null, aussteller: '', person: '',
     modul: '', kategorie: '', steuerjahr: null, steuerjahr_manuell: false, status: 'offen', notiz: '',
     objekt_id: '', einheit_id: '', umlagefaehig: false, aufteilung: [],
+    kind_id: '', zahlungsart: '', arbeitskosten_ct: null, material_ct: null,
   }
 }
 
@@ -65,7 +72,7 @@ export function wirksamesSteuerjahr(e: BelegEntwurf): number | null {
 }
 
 /** Liefert Fehlermeldungen; leere Liste = speicherbar. */
-export function pruefePflicht(e: BelegEntwurf, konfigs: Record<number, SteuerjahrKonfig>, objekteVorhanden = false): string[] {
+export function pruefePflicht(e: BelegEntwurf, konfigs: Record<number, SteuerjahrKonfig>, objekteVorhanden = false, kinderVorhanden = false): string[] {
   const f: string[] = []
   if (!e.belegdatum) f.push('Belegdatum fehlt')
   if (!e.zahlungsdatum) f.push('Zahlungsdatum fehlt')
@@ -89,18 +96,43 @@ export function pruefePflicht(e: BelegEntwurf, konfigs: Record<number, Steuerjah
         if (e.aufteilung.length) f.push(...pruefeAufteilung(e.aufteilung))
         else if (objekteVorhanden && !e.objekt_id) f.push('Objekt fehlt')
       }
+      if (m.ebene === 'kind' && kinderVorhanden && !e.kind_id) f.push('Kind fehlt')
+      if (m.id === '35A' && e.betrag_ct !== null) {
+        const a = e.arbeitskosten_ct
+        const mat = e.material_ct
+        if (a !== null && mat !== null && a + mat !== e.betrag_ct)
+          f.push(`Arbeitskosten + Material = ${betragText(a + mat).replace('EUR', ' €')} statt Betrag ${betragText(e.betrag_ct).replace('EUR', ' €')}`)
+        else if ((a ?? 0) > e.betrag_ct || (mat ?? 0) > e.betrag_ct) f.push('Arbeitskosten bzw. Material größer als der Betrag')
+      }
     }
   }
   return f
 }
 
 /**
+ * Hinweise, die das Speichern nicht verhindern (gelb anzeigen).
+ * § 35a: begünstigt sind nur Arbeitskosten bei unbarer Zahlung (§ 35a Abs. 5 EStG – Annahme, bitte prüfen).
+ */
+export function belegHinweise(e: BelegEntwurf): string[] {
+  const h: string[] = []
+  if (e.modul === '35A') {
+    if (e.zahlungsart === 'bar') h.push('Barzahlung: Für § 35a wird in der Regel eine Zahlung auf das Konto des Leistenden verlangt. Bitte prüfen.')
+    if (!e.zahlungsart) h.push('Zahlungsart (unbar/bar) fehlt.')
+    if (e.arbeitskosten_ct === null) h.push('Arbeitskosten fehlen. Begünstigt ist in der Regel nur der Lohnanteil laut Rechnung.')
+  }
+  return h
+}
+
+/**
  * Zielordner relativ zu Steuer/<Jahr>/.
  * Anlage V: <Modulordner>/<Objekt>/<Kategorie>; aufgeteilte Belege liegen beim Objekt mit dem
  * größten Anteil (Annahme). Ohne Objekt (z. B. noch keins angelegt) direkt im Modulordner.
- * Ebene „kind“: vorerst Modulordner, bis Kinder (M4) gepflegt werden können.
+ * Ebene „kind“: <Modulordner>/<Kind>/<Kategorie>; ohne Kind direkt im Modulordner.
  */
-export function zielOrdnerPfad(e: BelegEntwurf, konfig: SteuerjahrKonfig, objekte: { id: string; bezeichnung: string }[] = []): string[] {
+export function zielOrdnerPfad(
+  e: BelegEntwurf, konfig: SteuerjahrKonfig,
+  objekte: { id: string; bezeichnung: string }[] = [], kinder: { id: string; name: string }[] = [],
+): string[] {
   const m = konfig.module.find((x) => x.id === e.modul)
   if (!m) throw new Error(`Modul ${e.modul} unbekannt`)
   const kat = m.kategorien.find((k) => k.schluessel === e.kategorie)
@@ -116,6 +148,10 @@ export function zielOrdnerPfad(e: BelegEntwurf, konfig: SteuerjahrKonfig, objekt
     const id = e.aufteilung.length ? hauptObjekt(e.aufteilung) : e.objekt_id
     const o = objekte.find((x) => x.id === id)
     if (o) return kat ? [...basis, ordnerName(o.bezeichnung), ordnerName(kat.name)] : [...basis, ordnerName(o.bezeichnung)]
+  }
+  if (m.ebene === 'kind') {
+    const k = kinder.find((x) => x.id === e.kind_id)
+    if (k) return kat ? [...basis, ordnerName(k.name), ordnerName(kat.name)] : [...basis, ordnerName(k.name)]
   }
   return basis
 }
@@ -191,6 +227,8 @@ export function zeileAus(b: Beleg): Zelle[] {
     status: b.status, notiz: b.notiz, datei_ids: b.datei_ids, dateiname: b.dateiname,
     objekt_id: b.aufteilung.length ? '' : b.objekt_id, einheit_id: b.aufteilung.length ? '' : b.einheit_id,
     umlagefaehig: b.umlagefaehig ? 'ja' : '',
+    kind_id: b.kind_id, zahlungsart: b.zahlungsart,
+    arbeitskosten_ct: b.arbeitskosten_ct ?? '', material_ct: b.material_ct ?? '',
     erfasst_von: b.erfasst_von, erfasst_am: b.erfasst_am, geaendert_von: b.geaendert_von,
     geaendert_am: b.geaendert_am, version: b.version,
   }
@@ -211,5 +249,7 @@ export function belegAusZeile(z: (string | number | undefined)[]): Beleg {
     erfasst_von: g('erfasst_von'), erfasst_am: g('erfasst_am'), geaendert_von: g('geaendert_von'),
     geaendert_am: g('geaendert_am'), version: zahl('version') ?? 1,
     objekt_id: g('objekt_id'), einheit_id: g('einheit_id'), umlagefaehig: g('umlagefaehig') === 'ja', aufteilung: [],
+    kind_id: g('kind_id'), zahlungsart: (['unbar', 'bar'].includes(g('zahlungsart')) ? g('zahlungsart') : '') as BelegEntwurf['zahlungsart'],
+    arbeitskosten_ct: zahl('arbeitskosten_ct'), material_ct: zahl('material_ct'),
   }
 }

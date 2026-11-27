@@ -2,6 +2,7 @@
 // Lesen und Schreiben nur online; eine Kopie liegt lokal für die Erfassung ohne Netz.
 import { BLAETTER } from './schema'
 import type { Anteil, Einheit, Einnahme, Objekt, Umlageschluessel } from '../fachlich/objekte'
+import type { Arbeitstage, Fahrt, Fahrtzweck, Kind } from '../fachlich/personen'
 
 type Zelle = string | number
 type Zeile = (Zelle | undefined)[]
@@ -54,14 +55,38 @@ export function aufteilungAusZeile(z: Zeile): AufteilungZeile {
 }
 export const zeileAusAufteilung = (belegId: string, a: Anteil): Zelle[] => [belegId, a.objekt_id, a.einheit_id, a.anteil_prozent]
 
+// ---------------------------------------------------------------- ab M4: Kinder, Fahrten, Arbeitstage
+
+export function kindAusZeile(z: Zeile): Kind {
+  const g = lies('Kinder', z)
+  return { id: g('id'), name: g('name'), geburtsdatum: g('geburtsdatum') }
+}
+export const zeileAusKind = (k: Kind): Zelle[] => BLAETTER.Kinder.map((s) => (k as unknown as Record<string, Zelle>)[s] ?? '')
+
+export function fahrtAusZeile(z: Zeile): Fahrt {
+  const g = lies('Fahrten', z)
+  return { id: g('id'), person: g('person'), datum: g('datum'), start: g('start'), ziel: g('ziel'), km: Number(g('km') || 0), zweck: (g('zweck') || 'Sonstiges') as Fahrtzweck, fahrzeug: g('fahrzeug') }
+}
+export const zeileAusFahrt = (f: Fahrt): Zelle[] => BLAETTER.Fahrten.map((s) => (f as unknown as Record<string, Zelle>)[s] ?? '')
+
+export function arbeitstageAusZeile(z: Zeile): Arbeitstage {
+  const g = lies('Arbeitstage', z)
+  return { person: g('person'), jahr: Number(g('jahr') || 0), entfernung_km: zahl(g('entfernung_km')), arbeitstage: Number(g('arbeitstage') || 0), homeoffice_tage: Number(g('homeoffice_tage') || 0) }
+}
+export const zeileAusArbeitstage = (a: Arbeitstage): Zelle[] =>
+  [a.person, a.jahr, a.entfernung_km ?? '', a.arbeitstage, a.homeoffice_tage]
+
 export interface Stamm {
   objekte: Objekt[]
   einheiten: Einheit[]
   einnahmen: Einnahme[]
   aufteilung: AufteilungZeile[]
+  kinder: Kind[]
+  fahrten: Fahrt[]
+  arbeitstage: Arbeitstage[]
 }
 
-export const LEER: Stamm = { objekte: [], einheiten: [], einnahmen: [], aufteilung: [] }
+export const LEER: Stamm = { objekte: [], einheiten: [], einnahmen: [], aufteilung: [], kinder: [], fahrten: [], arbeitstage: [] }
 
 export function stammAus(blaetter: Record<string, Zeile[]>): Stamm {
   const voll = (l: Zeile[] | undefined) => (l ?? []).filter((z) => z[0] !== undefined && z[0] !== '')
@@ -70,5 +95,8 @@ export function stammAus(blaetter: Record<string, Zeile[]>): Stamm {
     einheiten: voll(blaetter.Einheiten).map(einheitAusZeile),
     einnahmen: voll(blaetter.Einnahmen).map(einnahmeAusZeile),
     aufteilung: voll(blaetter.Aufteilung).map(aufteilungAusZeile),
+    kinder: voll(blaetter.Kinder).map(kindAusZeile),
+    fahrten: voll(blaetter.Fahrten).map(fahrtAusZeile),
+    arbeitstage: voll(blaetter.Arbeitstage).map(arbeitstageAusZeile),
   }
 }

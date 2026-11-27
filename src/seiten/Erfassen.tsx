@@ -2,9 +2,9 @@
 // Gespeichert wird zuerst lokal (Warteschlange); die Übertragung nach Drive läuft danach automatisch.
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { KONFIGURATIONEN, AKTUELLES_JAHR } from '../konfig'
+import { AKTUELLES_JAHR, KONFIGURATIONEN } from '../konfig'
 import {
-  findeDuplikate, GEMEINSAM, leererEntwurf, pruefePflicht, steuerjahrAus, wirksamesSteuerjahr, type BelegEntwurf,
+  findeDuplikate, leererEntwurf, pruefePflicht, wirksamesSteuerjahr, type BelegEntwurf,
 } from '../fachlich/beleg'
 import { formatDatum, formatEuro, parseBetrag } from '../fachlich/format'
 import { alsJpeg, rendere, VOLL, vorschau, type Filter, type Seite } from '../erfassung/bild'
@@ -13,7 +13,7 @@ import { warteschlange } from '../daten/speicher'
 import { nutzerEmail, starteSync } from '../daten/dienste'
 import { gespeicherteWurzel } from '../daten/einrichtung'
 import { useDaten, useStamm } from '../komponenten/hooks'
-import ObjektZuordnung from '../komponenten/ObjektZuordnung'
+import BelegFelder from '../komponenten/BelegFelder'
 import Zuschnitt from '../komponenten/Zuschnitt'
 import { holeGeteilteDateien } from '../erfassung/teilen'
 import { nimmVorgemerkte } from '../erfassung/uebergabe'
@@ -25,7 +25,6 @@ type Eintrag =
 const neueId = () => crypto.randomUUID()
 
 export default function Erfassen() {
-  const konfig = KONFIGURATIONEN[AKTUELLES_JAHR]
   const { wartend, belege } = useDaten(AKTUELLES_JAHR)
   const stamm = useStamm(AKTUELLES_JAHR)
   const navigate = useNavigate()
@@ -39,7 +38,6 @@ export default function Erfassen() {
   const [laeuft, setLaeuft] = useState('')
   const [fehler, setFehler] = useState('')
 
-  const setze = <K extends keyof BelegEntwurf>(k: K, v: BelegEntwurf[K]) => setE((a) => ({ ...a, [k]: v }))
 
   const fuegeHinzu = useCallback(async (dateien: File[] | Blob[]) => {
     setFehler('')
@@ -83,13 +81,12 @@ export default function Erfassen() {
   const entferne = (id: string) => setSeiten((a) => a.filter((x) => x.id !== id))
   const nachVorn = (i: number) => setSeiten((a) => (i ? [...a.slice(0, i - 1), a[i], a[i - 1], ...a.slice(i + 1)] : a))
 
-  const modul = konfig.module.find((m) => m.id === e.modul)
   const fehlerListe = useMemo(() => {
-    const f = pruefePflicht(e, KONFIGURATIONEN, stamm.objekte.some((o) => o.aktiv))
+    const f = pruefePflicht(e, KONFIGURATIONEN, stamm.objekte.some((o) => o.aktiv), stamm.kinder.length > 0)
     if (betragText && parseBetrag(betragText) === null) f.unshift('Betrag ist keine gültige Zahl (z. B. 412,50)')
     if (!seiten.length) f.unshift('Mindestens eine Seite (Foto oder PDF) fehlt')
     return f
-  }, [e, betragText, seiten.length, stamm.objekte])
+  }, [e, betragText, seiten.length, stamm.objekte, stamm.kinder])
 
   const duplikate = useMemo(() => findeDuplikate(e, [
     ...belege,
@@ -129,7 +126,6 @@ export default function Erfassen() {
   if (bearbeitet && bearbeitet.art === 'bild')
     return <Zuschnitt seite={bearbeitet} fertig={(r) => { setBearbeite(null); if (r) void aendereSeite(bearbeitet.id, (s) => ({ ...s, zuschnitt: r })) }} />
 
-  const jahr = wirksamesSteuerjahr(e)
 
   return (
     <>
@@ -175,92 +171,24 @@ export default function Erfassen() {
 
       <div className="karte">
         <h2>2. Angaben</h2>
-        <div className="zeile" style={{ alignItems: 'flex-start' }}>
-          <label className="feld"><span>Belegdatum *</span>
-            <input type="date" value={e.belegdatum} onChange={(x) => {
-              const v = x.target.value
-              setE((a) => ({ ...a, belegdatum: v, zahlungsdatum: zahlungGeaendert ? a.zahlungsdatum : v }))
-            }} />
-          </label>
-          <label className="feld"><span>Zahlungsdatum *</span>
-            <input type="date" value={e.zahlungsdatum} onChange={(x) => { setZahlungGeaendert(true); setze('zahlungsdatum', x.target.value) }} />
-          </label>
-        </div>
-        <label className="feld"><span>Betrag brutto in € *</span>
-          <input inputMode="decimal" placeholder="z. B. 412,50" value={betragText} onChange={(x) => { setBetragText(x.target.value); setze('betrag_ct', parseBetrag(x.target.value)) }} />
-          {e.betrag_ct !== null && <span className="klein"> = {formatEuro(e.betrag_ct)}</span>}
-        </label>
-        <label className="feld"><span>Aussteller *</span>
-          <input list="aussteller" value={e.aussteller} onChange={(x) => setze('aussteller', x.target.value)} />
-          <datalist id="aussteller">{aussteller.map((a) => <option key={a} value={a} />)}</datalist>
-        </label>
-
-        {duplikate.length > 0 && (
-          <div className="warnung">
-            <strong>Möglicherweise doppelt:</strong>
-            <ul className="liste">
-              {duplikate.map((d) => (
-                <li key={d.beleg.id}>
-                  {d.beleg.belegnr ? `Nr. ${d.beleg.belegnr}, ` : '(noch nicht übertragen) '}
-                  {formatDatum(d.beleg.belegdatum)}, {formatEuro(d.beleg.betrag_ct ?? 0)}, {d.beleg.aussteller}
-                  {d.stufe === 'hoch' ? ' – gleicher Aussteller' : ''}
-                </li>
-              ))}
-            </ul>
-            <span className="klein">Gleiches Datum und gleicher Betrag. Speichern ist trotzdem möglich.</span>
-          </div>
-        )}
-
-        <fieldset className="feld" style={{ border: 0, padding: 0, margin: '0 0 10px' }}>
-          <span style={{ display: 'block', fontSize: '0.9rem', marginBottom: 3 }}>Person *</span>
-          <div className="zeile">
-            {[...konfig.personen, { id: GEMEINSAM, name: 'gemeinsam' }].map((p) => (
-              <label key={p.id} className="wahl"><input type="radio" name="person" checked={e.person === p.id} onChange={() => setze('person', p.id)} /> {p.name}</label>
-            ))}
-          </div>
-        </fieldset>
-        <label className="feld"><span>Modul *</span>
-          <select value={e.modul} onChange={(x) => setE((a) => ({ ...a, modul: x.target.value, kategorie: '', objekt_id: '', einheit_id: '', aufteilung: [], umlagefaehig: false }))}>
-            <option value="">– wählen –</option>
-            {konfig.module.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-          </select>
-        </label>
-        {modul && modul.kategorien.length > 0 && (
-          <label className="feld"><span>Kategorie *</span>
-            <select value={e.kategorie} onChange={(x) => {
-              const k = modul.kategorien.find((y) => y.schluessel === x.target.value)
-              setE((a) => ({ ...a, kategorie: x.target.value, umlagefaehig: modul.ebene === 'objekt' ? !!k?.umlagefaehig_vorschlag : false }))
-            }}>
-              <option value="">– wählen –</option>
-              {modul.kategorien.map((k) => <option key={k.schluessel} value={k.schluessel}>{k.name}</option>)}
-            </select>
-          </label>
-        )}
-        {modul?.ebene === 'objekt' && <ObjektZuordnung e={e} setE={setE} stamm={stamm} />}
-        {modul?.ebene === 'kind' && (
-          <p className="klein">Zuordnung zu Kind folgt in einem späteren Meilenstein. Der Beleg liegt vorerst im Ordner „{modul.ordner}“.</p>
-        )}
-
-        <div className="feld">
-          <span className="klein">Steuerjahr: <strong>{jahr ?? '–'}</strong> {e.steuerjahr_manuell ? '(manuell)' : '(aus Zahlungsdatum)'}</span>
-          <label className="wahl" style={{ display: 'block' }}>
-            <input type="checkbox" checked={e.steuerjahr_manuell} onChange={(x) => setE((a) => ({ ...a, steuerjahr_manuell: x.target.checked, steuerjahr: a.steuerjahr ?? steuerjahrAus(a.zahlungsdatum) }))} />
-            {' '}Steuerjahr abweichend festlegen (z. B. 10-Tage-Regel, § 11 EStG – bitte selbst prüfen)
-          </label>
-          {e.steuerjahr_manuell && (
-            <input type="number" style={{ maxWidth: 120 }} value={e.steuerjahr ?? ''} onChange={(x) => setze('steuerjahr', x.target.value ? Number(x.target.value) : null)} />
+        <BelegFelder e={e} setE={setE} betragText={betragText} setBetragText={setBetragText} zahlungGeaendert={zahlungGeaendert}
+          setZahlungGeaendert={setZahlungGeaendert} aussteller={aussteller} stamm={stamm}>
+          {duplikate.length > 0 && (
+            <div className="warnung">
+              <strong>Möglicherweise doppelt:</strong>
+              <ul className="liste">
+                {duplikate.map((d) => (
+                  <li key={d.beleg.id}>
+                    {d.beleg.belegnr ? `Nr. ${d.beleg.belegnr}, ` : '(noch nicht übertragen) '}
+                    {formatDatum(d.beleg.belegdatum)}, {formatEuro(d.beleg.betrag_ct ?? 0)}, {d.beleg.aussteller}
+                    {d.stufe === 'hoch' ? ' – gleicher Aussteller' : ''}
+                  </li>
+                ))}
+              </ul>
+              <span className="klein">Gleiches Datum und gleicher Betrag. Speichern ist trotzdem möglich.</span>
+            </div>
           )}
-        </div>
-        <label className="feld"><span>Status</span>
-          <select value={e.status} onChange={(x) => setze('status', x.target.value as BelegEntwurf['status'])}>
-            <option value="offen">offen</option>
-            <option value="unvollständig">unvollständig</option>
-            <option value="geprüft">geprüft</option>
-          </select>
-        </label>
-        <label className="feld"><span>Notiz</span>
-          <textarea value={e.notiz} onChange={(x) => setze('notiz', x.target.value)} placeholder="Tipp: Mikrofon der Tastatur für Spracheingabe" />
-        </label>
+        </BelegFelder>
       </div>
 
       {versucht && fehlerListe.length > 0 && (

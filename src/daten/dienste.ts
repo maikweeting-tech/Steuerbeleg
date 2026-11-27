@@ -1,12 +1,17 @@
 // Verdrahtung der Synchronisierung mit Google und IndexedDB sowie automatischer Start.
 import { AKTUELLES_JAHR, KONFIGURATIONEN } from '../konfig'
 import { istAngemeldet } from '../google/auth'
-import { findeBelegDatei, findeInOrdner, holeOderErstellePfad, ladeHoch, ORDNER_MIME, SHEET_MIME } from '../google/drive'
-import { ergaenzeBlaetter, ersetzeZeile, haengeAn, leseBlatt } from '../google/sheets'
+import { findeBelegDatei, findeInOrdner, holeOderErstellePfad, ladeHoch, ORDNER_MIME, SHEET_MIME, verschiebeDatei } from '../google/drive'
+import { ergaenzeBlaetter, ersetzeZeile, haengeAn, leereZeilen, leseBlatt } from '../google/sheets'
 import { gespeicherteWurzel } from './einrichtung'
 import { belegCache, melde, warteschlange } from './speicher'
 import { findeIndex, ladeBelege, synchronisiere, type SyncDienste, type SyncErgebnis } from './sync'
-import { LEER, stammAus, zeileAusEinheit, zeileAusEinnahme, zeileAusObjekt, type Stamm } from './stamm'
+import {
+  LEER, stammAus, zeileAusArbeitstage, zeileAusEinheit, zeileAusEinnahme, zeileAusFahrt, zeileAusKind, zeileAusObjekt, type Stamm,
+} from './stamm'
+import { aendereBeleg } from './bearbeiten'
+import type { Beleg, BelegEntwurf } from '../fachlich/beleg'
+import type { Arbeitstage, Fahrt, Kind } from '../fachlich/personen'
 import { ordnerName } from '../fachlich/konfiguration'
 import type { Einheit, Einnahme, Objekt } from '../fachlich/objekte'
 
@@ -67,7 +72,7 @@ export function automatischerSync() {
 // ---------------------------------------------------------------- Stammdaten Anlage V (online)
 
 
-const STAMM_BLAETTER = ['Objekte', 'Einheiten', 'Einnahmen', 'Aufteilung']
+const STAMM_BLAETTER = ['Objekte', 'Einheiten', 'Einnahmen', 'Aufteilung', 'Kinder', 'Fahrten', 'Arbeitstage']
 
 export async function ladeStamm(jahr: number): Promise<Stamm> {
   const { indexId } = await findeIndex(jahr, dienste)
@@ -123,6 +128,50 @@ export async function loescheEinnahme(jahr: number, id: string) {
 }
 
 export const stammCache = {
-  lies: async (jahr: number): Promise<Stamm> => (await belegCache.liesRoh<Stamm>(`stamm_${jahr}`)) ?? LEER,
+  lies: async (jahr: number): Promise<Stamm> => ({ ...LEER, ...(await belegCache.liesRoh<Stamm>(`stamm_${jahr}`)) }),
   schreibe: (jahr: number, s: Stamm) => belegCache.schreibeRoh(`stamm_${jahr}`, s),
+}
+
+// ---------------------------------------------------------------- ab M4
+
+/** E14: Beleg ändern (online). Danach Belegindex und Stammdaten neu laden. */
+export async function aendereBelegOnline(jahr: number, alt: Beleg, neu: BelegEntwurf): Promise<Beleg> {
+  const { indexId, ordnerId } = await findeIndex(jahr, dienste)
+  const stamm = await ladeStamm(jahr)
+  const b = await aendereBeleg(alt, neu, {
+    konfig: KONFIGURATIONEN[jahr], indexId, ordnerId, stamm, nutzer: nutzerEmail, jetzt: () => new Date().toISOString(),
+    leseBlatt, ersetzeZeile, leereZeilen, haengeAn, holeOderErstellePfad, verschiebeDatei,
+  })
+  await aktualisiereBelege(jahr)
+  return b
+}
+
+export async function speichereKind(jahr: number, k: Kind, loeschen = false) {
+  const { indexId } = await findeIndex(jahr, dienste)
+  if (loeschen) await ersetzeZeile(indexId, 'Kinder', k.id, null)
+  else if (!(await ersetzeZeile(indexId, 'Kinder', k.id, zeileAusKind(k)))) await haengeAn(indexId, 'Kinder', [zeileAusKind(k)])
+  await protokoll(indexId, loeschen ? 'kind gelöscht' : 'kind gespeichert', k.id, k.name)
+  return ladeStamm(jahr)
+}
+
+export async function speichereFahrten(jahr: number, liste: Fahrt[]) {
+  const { indexId } = await findeIndex(jahr, dienste)
+  await haengeAn(indexId, 'Fahrten', liste.map(zeileAusFahrt))
+  await protokoll(indexId, 'fahrt erfasst', liste[0]?.id ?? '', `${liste.length} Fahrt(en)`)
+  return ladeStamm(jahr)
+}
+
+export async function loescheFahrt(jahr: number, id: string) {
+  const { indexId } = await findeIndex(jahr, dienste)
+  await ersetzeZeile(indexId, 'Fahrten', id, null)
+  await protokoll(indexId, 'fahrt gelöscht', id, '')
+  return ladeStamm(jahr)
+}
+
+/** Arbeitstage: eine Zeile je Person (Spalte A) im Belegindex des Jahres. */
+export async function speichereArbeitstage(jahr: number, a: Arbeitstage) {
+  const { indexId } = await findeIndex(jahr, dienste)
+  if (!(await ersetzeZeile(indexId, 'Arbeitstage', a.person, zeileAusArbeitstage(a)))) await haengeAn(indexId, 'Arbeitstage', [zeileAusArbeitstage(a)])
+  await protokoll(indexId, 'arbeitstage gespeichert', a.person, `${a.arbeitstage} AT, ${a.homeoffice_tage} HO, ${a.entfernung_km ?? '–'} km`)
+  return ladeStamm(jahr)
 }

@@ -6,6 +6,9 @@ import Erfassen from './seiten/Erfassen'
 import Belege from './seiten/Belege'
 import Objekte from './seiten/Objekte'
 import ObjektSeite from './seiten/Objekt'
+import BelegBearbeiten from './seiten/BelegBearbeiten'
+import Fahrten from './seiten/Fahrten'
+import Kinder from './seiten/Kinder'
 import { starteAnmeldung, stilleAnmeldungMoeglich } from './google/auth'
 import { automatischerSync } from './daten/dienste'
 import { useDaten } from './komponenten/hooks'
@@ -13,7 +16,8 @@ import { AKTUELLES_JAHR } from './konfig'
 import { KameraKnopf } from './komponenten/Schnellerfassung'
 
 function Kamera() {
-  return useLocation().pathname === '/erfassen' ? null : <KameraKnopf />
+  const p = useLocation().pathname
+  return p === '/erfassen' || p.startsWith('/belege/') ? null : <KameraKnopf />
 }
 
 function Navigation() {
@@ -24,6 +28,8 @@ function Navigation() {
       <NavLink to="/erfassen">Erfassen</NavLink>
       <NavLink to="/belege">Belege{wartend.length > 0 && <> <span className="marke" title="warten auf Übertragung">{wartend.length}</span></>}</NavLink>
       <NavLink to="/objekte">Objekte</NavLink>
+      <NavLink to="/fahrten">Fahrten</NavLink>
+      <NavLink to="/kinder">Kinder</NavLink>
       <NavLink to="/info">Info</NavLink>
     </nav>
   )
@@ -47,6 +53,9 @@ export default function App() {
           <Route path="/" element={<Start />} />
           <Route path="/erfassen" element={<Erfassen />} />
           <Route path="/belege" element={<Belege />} />
+          <Route path="/belege/:id" element={<BelegBearbeiten />} />
+          <Route path="/fahrten" element={<Fahrten />} />
+          <Route path="/kinder" element={<Kinder />} />
           <Route path="/objekte" element={<Objekte />} />
           <Route path="/objekte/:id" element={<ObjektSeite />} />
           <Route path="/info" element={<Info />} />
