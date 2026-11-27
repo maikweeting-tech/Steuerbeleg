@@ -58,6 +58,14 @@ export async function leseBlatt(sheetId: string, blatt: string): Promise<Zelle[]
   return d.values ?? []
 }
 
+/** Liest mehrere Blätter in EINER Anfrage (schont das Lese-Kontingent von 60 Anfragen/Minute). */
+export async function leseBlaetter(sheetId: string, blaetter: string[]): Promise<Zelle[][][]> {
+  const p = new URLSearchParams({ valueRenderOption: 'UNFORMATTED_VALUE', dateTimeRenderOption: 'FORMATTED_STRING' })
+  blaetter.forEach((b) => p.append('ranges', `'${b}'!A2:ZZ`))
+  const d = await googleFetch(`${SHEETS}/${sheetId}/values:batchGet?${p}`)
+  return blaetter.map((_, i) => (d.valueRanges?.[i]?.values ?? []) as Zelle[][])
+}
+
 /** Hängt Zeilen unten an (RAW: Texte bleiben Texte, z. B. Datum JJJJ-MM-TT). */
 export async function haengeAn(sheetId: string, blatt: string, zeilen: Zelle[][]) {
   const p = new URLSearchParams({ valueInputOption: 'RAW', insertDataOption: 'INSERT_ROWS' })
