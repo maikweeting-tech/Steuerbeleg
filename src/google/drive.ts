@@ -131,3 +131,27 @@ export async function verschiebeDatei(id: string, name: string, neuerOrdnerId: s
   const d: { id: string; name: string } = await googleFetch(`${DRIVE}/${encodeURIComponent(id)}?${p}`, { method: 'PATCH', body: JSON.stringify(umbenennen ? { name } : {}) })
   return { id: d.id, name: d.name, offen }
 }
+
+/** Dateiinhalt laden (alt=media) – für Belegmappe und ZIP-Export. */
+export async function ladeInhalt(id: string): Promise<{ daten: ArrayBuffer; mimeType: string; name: string }> {
+  const meta = await datei(id)
+  const t = await holeToken()
+  const r = await fetch(`${DRIVE}/${encodeURIComponent(id)}?alt=media&supportsAllDrives=true`, { headers: { Authorization: `Bearer ${t}` } })
+  if (!r.ok) throw new Error(`Datei ${meta.name || id} nicht ladbar (${r.status})`)
+  return { daten: await r.arrayBuffer(), mimeType: meta.mimeType, name: meta.name }
+}
+
+/** Upload großer Dateien (resumable, für Exporte > 5 MB). */
+export async function ladeHochGross(name: string, mimeType: string, inhalt: Blob, elternId: string): Promise<DriveDatei> {
+  const t = await holeToken()
+  const start = await fetch(`${UPLOAD}?uploadType=resumable&supportsAllDrives=true&fields=${FELDER}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': mimeType, 'X-Upload-Content-Length': String(inhalt.size) },
+    body: JSON.stringify({ name, mimeType, parents: [elternId] }),
+  })
+  const ziel = start.headers.get('Location')
+  if (!start.ok || !ziel) throw new Error(`Upload konnte nicht gestartet werden (${start.status})`)
+  const r = await fetch(ziel, { method: 'PUT', headers: { 'Content-Type': mimeType }, body: inhalt })
+  if (!r.ok) throw new Error(`Upload fehlgeschlagen (${r.status})`)
+  return r.json()
+}
