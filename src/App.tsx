@@ -13,6 +13,7 @@ import Check from './seiten/Check'
 import Konto from './seiten/Konto'
 import Export from './seiten/Export'
 import Bescheid from './seiten/Bescheid'
+import Erklaerung from './seiten/Erklaerung'
 import { starteAnmeldung, stilleAnmeldungMoeglich } from './google/auth'
 import { automatischerSync } from './daten/dienste'
 import { useDaten } from './komponenten/hooks'
@@ -34,6 +35,7 @@ function Navigation() {
       <NavLink to="/belege">Belege{wartend.length > 0 && <> <span className="marke" title="warten auf Übertragung">{wartend.length}</span></>}</NavLink>
       <NavLink to="/check">Check</NavLink>
       <NavLink to="/konto">Konto</NavLink>
+      <NavLink to="/erklaerung">Erklärung</NavLink>
       <NavLink to="/export">Export</NavLink>
       <NavLink to="/bescheid">Bescheid</NavLink>
       <NavLink to="/objekte">Objekte</NavLink>
@@ -76,6 +78,7 @@ export default function App() {
           <Route path="/konto" element={<Konto />} />
           <Route path="/export" element={<Export />} />
           <Route path="/bescheid" element={<Bescheid />} />
+          <Route path="/erklaerung" element={<Erklaerung />} />
           <Route path="/info" element={<Info />} />
         </Routes>
       </main>

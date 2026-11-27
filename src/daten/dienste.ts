@@ -7,7 +7,7 @@ import { gespeicherteWurzel } from './einrichtung'
 import { belegCache, melde, warteschlange } from './speicher'
 import { findeIndex, ladeBelege, synchronisiere, type SyncDienste, type SyncErgebnis } from './sync'
 import {
-  LEER, stammAus, zeileAusArbeitstage, zeileAusEinheit, zeileAusEinnahme, zeileAusFahrt, zeileAusKind, zeileAusObjekt, zeileAusVorlage, zeileAusBuchung, zeileAusBescheid, zeileAusKopf, type Stamm,
+  LEER, stammAus, zeileAusArbeitstage, zeileAusEinheit, zeileAusEinnahme, zeileAusFahrt, zeileAusKind, zeileAusObjekt, zeileAusVorlage, zeileAusBuchung, zeileAusBescheid, zeileAusKopf, zeileAusAntwort, type Stamm,
 } from './stamm'
 import type { Vorlage } from '../fachlich/vorlagen'
 import { KOPF_ID, type BescheidKopf, type BescheidPosten } from '../fachlich/bescheid'
@@ -79,7 +79,7 @@ export function automatischerSync() {
 // ---------------------------------------------------------------- Stammdaten Anlage V (online)
 
 
-const STAMM_BLAETTER = ['Objekte', 'Einheiten', 'Einnahmen', 'Aufteilung', 'Kinder', 'Fahrten', 'Arbeitstage', 'Auftraege', 'Vorlagen', 'Buchungen', 'Bescheid']
+const STAMM_BLAETTER = ['Objekte', 'Einheiten', 'Einnahmen', 'Aufteilung', 'Kinder', 'Fahrten', 'Arbeitstage', 'Auftraege', 'Vorlagen', 'Buchungen', 'Bescheid', 'Erklaerung']
 
 export async function ladeStamm(jahr: number): Promise<Stamm> {
   const { indexId } = await findeIndex(jahr, dienste)
@@ -264,4 +264,17 @@ export async function uebernehmeStamm(von: number, nach: number): Promise<{ obje
   for (const x of k) await speichereKind(nach, x)
   await ladeStamm(nach)
   return { objekte: o.length, einheiten: e.length, kinder: k.length }
+}
+
+// ---------------------------------------------------------------- ab S1: Erklärungs-Assistent
+
+/** Speichert eine Antwort (leerer Wert und leere Notiz = Antwort löschen). */
+export async function speichereAntwort(jahr: number, id: string, wert: string, notiz: string) {
+  const { indexId } = await findeIndex(jahr, dienste)
+  if (!wert && !notiz) await ersetzeZeile(indexId, 'Erklaerung', id, null)
+  else {
+    const z = zeileAusAntwort(id, wert, notiz, nutzerEmail(), new Date().toISOString())
+    if (!(await ersetzeZeile(indexId, 'Erklaerung', id, z))) await haengeAn(indexId, 'Erklaerung', [z])
+  }
+  return ladeStamm(jahr)
 }
