@@ -48,6 +48,11 @@ export function testDaten(): ExportDaten {
       { id: 'f2', person: 'maik', datum: '2026-05-01', start: 'Kalkar', ziel: 'Düsseldorf', km: 180.5, zweck: 'Fortbildung', fahrzeug: '' },
     ],
     arbeitstage: [{ person: 'maik', jahr: 2026, entfernung_km: 23.5, arbeitstage: 180, homeoffice_tage: 40 }],
+    bescheid: [
+      { id: 'p1', bezeichnung: 'Anlage N Werbungskosten', modul: 'N', erklaerung_ct: 129999, bescheid_ct: 119999, notiz: 'Arbeitsmittel gekürzt' },
+      { id: 'p2', bezeichnung: 'Handwerker § 35a', modul: '35A', erklaerung_ct: 80000, bescheid_ct: null, notiz: '' },
+    ],
+    bescheidKopf: { bescheiddatum: '2027-06-10', einspruchsfrist: '2027-07-13', notiz: '' },
   }
   return { jahr: 2026, konfig: KONFIGURATIONEN[2026], belege, stamm, vorjahr: [beleg({ modul: 'AGB', kategorie: 'krankheitskosten', betrag_ct: 5000 })], erstellt: '2026-11-27T18:00:00Z' }
 }

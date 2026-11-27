@@ -7,9 +7,10 @@ import { gespeicherteWurzel } from './einrichtung'
 import { belegCache, melde, warteschlange } from './speicher'
 import { findeIndex, ladeBelege, synchronisiere, type SyncDienste, type SyncErgebnis } from './sync'
 import {
-  LEER, stammAus, zeileAusArbeitstage, zeileAusEinheit, zeileAusEinnahme, zeileAusFahrt, zeileAusKind, zeileAusObjekt, zeileAusVorlage, zeileAusBuchung, type Stamm,
+  LEER, stammAus, zeileAusArbeitstage, zeileAusEinheit, zeileAusEinnahme, zeileAusFahrt, zeileAusKind, zeileAusObjekt, zeileAusVorlage, zeileAusBuchung, zeileAusBescheid, zeileAusKopf, type Stamm,
 } from './stamm'
 import type { Vorlage } from '../fachlich/vorlagen'
+import { KOPF_ID, type BescheidKopf, type BescheidPosten } from '../fachlich/bescheid'
 import type { Buchung, Markierung } from '../fachlich/kontoauszug'
 import { aendereBeleg, erledigeAuftraege } from './bearbeiten'
 import type { Beleg, BelegEntwurf } from '../fachlich/beleg'
@@ -78,7 +79,7 @@ export function automatischerSync() {
 // ---------------------------------------------------------------- Stammdaten Anlage V (online)
 
 
-const STAMM_BLAETTER = ['Objekte', 'Einheiten', 'Einnahmen', 'Aufteilung', 'Kinder', 'Fahrten', 'Arbeitstage', 'Auftraege', 'Vorlagen', 'Buchungen']
+const STAMM_BLAETTER = ['Objekte', 'Einheiten', 'Einnahmen', 'Aufteilung', 'Kinder', 'Fahrten', 'Arbeitstage', 'Auftraege', 'Vorlagen', 'Buchungen', 'Bescheid']
 
 export async function ladeStamm(jahr: number): Promise<Stamm> {
   const { indexId } = await findeIndex(jahr, dienste)
@@ -223,4 +224,29 @@ export async function speichereExport(jahr: number, name: string, mimeType: stri
   if (!wurzel) throw new Error('Kein Ordner „Steuer“ verbunden.')
   const ordner = await holeOderErstellePfad([String(jahr), 'Export'], wurzel)
   return ladeHochGross(name, mimeType, inhalt, ordner.id)
+}
+
+// ---------------------------------------------------------------- ab M8: Bescheid-Abgleich (E12)
+
+export async function speichereBescheidPosten(jahr: number, p: BescheidPosten, loeschen = false) {
+  const { indexId } = await findeIndex(jahr, dienste)
+  const z = zeileAusBescheid(p, nutzerEmail(), new Date().toISOString())
+  if (loeschen) await ersetzeZeile(indexId, 'Bescheid', p.id, null)
+  else if (!(await ersetzeZeile(indexId, 'Bescheid', p.id, z))) await haengeAn(indexId, 'Bescheid', [z])
+  await protokoll(indexId, loeschen ? 'bescheidposten gelöscht' : 'bescheidposten gespeichert', p.id, p.bezeichnung)
+  return ladeStamm(jahr)
+}
+
+export async function speichereBescheidPostenListe(jahr: number, l: BescheidPosten[]) {
+  const { indexId } = await findeIndex(jahr, dienste)
+  const am = new Date().toISOString()
+  if (l.length) await haengeAn(indexId, 'Bescheid', l.map((p) => zeileAusBescheid(p, nutzerEmail(), am)))
+  return ladeStamm(jahr)
+}
+
+export async function speichereBescheidKopf(jahr: number, k: BescheidKopf) {
+  const { indexId } = await findeIndex(jahr, dienste)
+  const z = zeileAusKopf(k, nutzerEmail(), new Date().toISOString())
+  if (!(await ersetzeZeile(indexId, 'Bescheid', KOPF_ID, z))) await haengeAn(indexId, 'Bescheid', [z])
+  return ladeStamm(jahr)
 }

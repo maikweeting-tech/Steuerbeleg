@@ -12,6 +12,7 @@ import Kinder from './seiten/Kinder'
 import Check from './seiten/Check'
 import Konto from './seiten/Konto'
 import Export from './seiten/Export'
+import Bescheid from './seiten/Bescheid'
 import { starteAnmeldung, stilleAnmeldungMoeglich } from './google/auth'
 import { automatischerSync } from './daten/dienste'
 import { useDaten } from './komponenten/hooks'
@@ -34,6 +35,7 @@ function Navigation() {
       <NavLink to="/check">Check</NavLink>
       <NavLink to="/konto">Konto</NavLink>
       <NavLink to="/export">Export</NavLink>
+      <NavLink to="/bescheid">Bescheid</NavLink>
       <NavLink to="/objekte">Objekte</NavLink>
       <NavLink to="/fahrten">Fahrten</NavLink>
       <NavLink to="/kinder">Kinder</NavLink>
@@ -69,6 +71,7 @@ export default function App() {
           <Route path="/check" element={<Check />} />
           <Route path="/konto" element={<Konto />} />
           <Route path="/export" element={<Export />} />
+          <Route path="/bescheid" element={<Bescheid />} />
           <Route path="/info" element={<Info />} />
         </Routes>
       </main>

@@ -8,6 +8,7 @@ import {
 } from './auswertung'
 import { FAHRTZWECKE } from '../fachlich/personen'
 import { SCHLUESSEL_NAMEN } from '../fachlich/objekte'
+import { formatDatum } from '../fachlich/format'
 
 type ExcelJS = typeof ExcelJSNs
 type WS = ExcelJSNs.Worksheet
@@ -65,6 +66,7 @@ export async function erstelleExcel(d: ExportDaten, ExcelJSMod: ExcelJS): Promis
   const anlageN = wb.addWorksheet('Anlage N')
   const fragenWs = wb.addWorksheet('Fragen')
   const vergleich = wb.addWorksheet('Jahresvergleich')
+  const bescheidWs = wb.addWorksheet('Bescheid')
   const pruefung = wb.addWorksheet('Prüfung')
   const annahmen = wb.addWorksheet('Annahmen')
   const bl = wb.addWorksheet('Belege', { views: [{ state: 'frozen', ySplit: 1 }] })
@@ -334,6 +336,27 @@ export async function erstelleExcel(d: ExportDaten, ExcelJSMod: ExcelJS): Promis
     for (const c of [5, 6, 7]) vergleich.getColumn(c).numFmt = EURO
   }
 
+  // ------------------------------------------------------------ Bescheid (E12)
+  titel(bescheidWs, `Bescheid-Abgleich ${d.jahr}`, 'Nur Erfassung: laut Erklärung gegen laut Bescheid. Keine Bewertung. Einspruchsfrist selbst eingetragen (prüfen).')
+  const bk = d.stamm.bescheidKopf
+  bescheidWs.getCell('A3').value = `Bescheid vom: ${bk.bescheiddatum ? formatDatum(bk.bescheiddatum) : '–'}   Einspruchsfrist bis: ${bk.einspruchsfrist ? formatDatum(bk.einspruchsfrist) : '–'} (prüfen)`
+  kopf(bescheidWs, 4, ['Posten', 'Modul-ID', 'laut Erklärung €', 'laut Bescheid €', 'Abweichung € (Formel)', 'Notiz'], [40, 10, 16, 16, 18, 50])
+  d.stamm.bescheid.forEach((p, i) => {
+    const z = 5 + i
+    const row = bescheidWs.getRow(z)
+    row.values = [p.bezeichnung, p.modul, p.erklaerung_ct === null ? '' : euro(p.erklaerung_ct), p.bescheid_ct === null ? '' : euro(p.bescheid_ct)]
+    row.getCell(5).value = f(`IF(OR(C${z}="",D${z}=""),"",D${z}-C${z})`)
+    row.getCell(6).value = p.notiz
+  })
+  const bz = 5 + d.stamm.bescheid.length
+  if (d.stamm.bescheid.length) {
+    const row = bescheidWs.getRow(bz)
+    row.getCell(1).value = 'Summe'
+    for (const c of ['C', 'D', 'E']) bescheidWs.getCell(`${c}${bz}`).value = f(`SUM(${c}5:${c}${bz - 1})`)
+    row.font = { bold: true }
+  } else bescheidWs.getCell('A5').value = 'Noch keine Posten erfasst (Seite „Bescheid“ in der App).'
+  for (const c of [3, 4, 5]) bescheidWs.getColumn(c).numFmt = EURO
+
   // ------------------------------------------------------------ Annahmen
   titel(annahmen, 'Annahmen und Festlegungen', 'Bitte prüfen. Normwerte/Sätze gegen Originalquelle bzw. Steuerberater prüfen.')
   kopf(annahmen, 4, ['Nr.', 'Annahme', 'Begründung', 'Status'], [5, 55, 70, 12])
@@ -343,6 +366,7 @@ export async function erstelleExcel(d: ExportDaten, ExcelJSMod: ExcelJS): Promis
     ['Aufgeteilte Belege werden mit Anteil % auf Objekte verteilt (Blatt Aufteilung, ungerundet).', 'Die App rundet je Anteil auf ganze Cent; Abweichungen von wenigen Cent zur App-Anzeige sind möglich.', 'Festlegung'],
     ['Art einer Kategorie (Einnahme/Werbungskosten/Ausgabe) kommt aus der Jahreskonfiguration.', 'Steuert die Summen auf Blatt Anlage V.', 'prüfen'],
     ['ELSTER-Zeilen sind Hinweise aus der Konfiguration.', 'Zeilennummern ändern sich je Formularjahr.', 'prüfen'],
+    ['Bescheid-Abgleich: Werte „laut Erklärung“ und „laut Bescheid“ von Hand eingetragen; Abweichung = Bescheid − Erklärung.', 'Die App bewertet die Abweichung nicht; Einspruchsfrist nicht berechnet, sondern selbst eingetragen.', 'prüfen'],
     ['Keine AfA-Berechnung, keine Steuerberechnung, keine § 35a-Ermäßigung, keine zumutbare Belastung.', 'Bewusst ausgeschlossen (Umsetzungsplan).', 'Festlegung'],
     ['Pauschalen (Entfernung, Homeoffice) werden nur als Zählgrößen ausgegeben.', 'Sätze stehen nur zur Info auf Blatt Anlage N.', 'prüfen'],
     ['NK-Vorlage: umlagefähige Kosten nach selbst gewähltem Schlüssel; Belege mit fester Einheit gehen direkt an diese Einheit.', 'Keine rechtssichere Nebenkostenabrechnung (BetrKV, Mietvertrag prüfen).', 'prüfen'],
