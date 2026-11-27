@@ -1,6 +1,6 @@
 // E7: Kontoauszug-Abgleich. CSV aus dem Online-Banking wird nur im Browser gelesen.
 // Erkannt werden die üblichen deutschen Exporte (Annahme, ohne echte Beispieldatei geprüft):
-// Sparkasse CSV-CAMT und CSV-MT940, Volksbanken/Atruvia (VR-Banking), ING, DKB, comdirect.
+// Sparkasse CSV-CAMT und CSV-MT940, Volksbanken/Atruvia (VR-Banking), ING, DKB, comdirect, Sparda-Bank.
 // Unbekannte Formate: Spalten lassen sich von Hand zuordnen.
 import type { Beleg } from './beleg'
 
@@ -141,7 +141,9 @@ function bankName(kopf: string[]): string {
   if (k.includes('auftraggeber/empfanger')) return 'ING'
   if (k.includes('zahlungsempfanger*in') || k.includes('zahlungspflichtige*r')) return 'DKB'
   if (k.includes('umsatz in eur')) return 'comdirect'
-  return 'unbekanntes Format'
+  // Sparda-Bank (Annahme nach bekanntem Export, prüfen): Empfänger steht im Verwendungszweck
+  if (/^buchungstag\|wertstellungstag\|verwendungszweck\|umsatz/.test(k)) return 'Sparda-Bank'
+  return 'Spalten automatisch zugeordnet'
 }
 
 /** Kopfzeile = erste Zeile, in der Datum- und Betragsspalte erkannt werden (Banken schreiben oft Vorspann-Zeilen). */
