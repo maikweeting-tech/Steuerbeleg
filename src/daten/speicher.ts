@@ -54,6 +54,8 @@ export const warteschlange = {
 export const belegCache = {
   lies: (jahr: number) => anfrage<Beleg[] | undefined>(CACHE, 'readonly', (s) => s.get(`belege_${jahr}`)).then((x) => x ?? []),
   schreibe: (jahr: number, b: Beleg[]) => anfrage<IDBValidKey>(CACHE, 'readwrite', (s) => s.put(b, `belege_${jahr}`)).then(() => melde()),
+  liesRoh: <T>(schluessel: string) => anfrage<T | undefined>(CACHE, 'readonly', (s) => s.get(schluessel)),
+  schreibeRoh: (schluessel: string, wert: unknown) => anfrage<IDBValidKey>(CACHE, 'readwrite', (s) => s.put(wert, schluessel)).then(() => melde()),
 }
 
 // Einfache Benachrichtigung der Oberfläche bei Änderungen

@@ -82,7 +82,8 @@
             "einheit": "Zeile",
             "quelle": "",
             "status": "prüfen"
-          }
+          },
+          "umlagefaehig_vorschlag": true
         },
         {
           "schluessel": "gebaeudeversicherung",
@@ -93,7 +94,8 @@
             "einheit": "Zeile",
             "quelle": "",
             "status": "prüfen"
-          }
+          },
+          "umlagefaehig_vorschlag": true
         },
         {
           "schluessel": "erhaltungsaufwand",
@@ -527,5 +529,6 @@
       "quelle": "",
       "status": "prüfen"
     }
-  }
+  },
+  "hinweis_umlage": "umlagefaehig_vorschlag ist nur ein Vorschlag (BetrKV), je Beleg änderbar – prüfen."
 }

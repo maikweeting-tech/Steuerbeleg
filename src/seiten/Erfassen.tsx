@@ -12,7 +12,8 @@ import { erstellePdf, type Teil } from '../erfassung/pdf'
 import { warteschlange } from '../daten/speicher'
 import { nutzerEmail, starteSync } from '../daten/dienste'
 import { gespeicherteWurzel } from '../daten/einrichtung'
-import { useDaten } from '../komponenten/hooks'
+import { useDaten, useStamm } from '../komponenten/hooks'
+import ObjektZuordnung from '../komponenten/ObjektZuordnung'
 import Zuschnitt from '../komponenten/Zuschnitt'
 import { holeGeteilteDateien } from '../erfassung/teilen'
 import { nimmVorgemerkte } from '../erfassung/uebergabe'
@@ -26,6 +27,7 @@ const neueId = () => crypto.randomUUID()
 export default function Erfassen() {
   const konfig = KONFIGURATIONEN[AKTUELLES_JAHR]
   const { wartend, belege } = useDaten(AKTUELLES_JAHR)
+  const stamm = useStamm(AKTUELLES_JAHR)
   const navigate = useNavigate()
   const ort = useLocation()
   const [seiten, setSeiten] = useState<Eintrag[]>([])
@@ -83,11 +85,11 @@ export default function Erfassen() {
 
   const modul = konfig.module.find((m) => m.id === e.modul)
   const fehlerListe = useMemo(() => {
-    const f = pruefePflicht(e, KONFIGURATIONEN)
+    const f = pruefePflicht(e, KONFIGURATIONEN, stamm.objekte.some((o) => o.aktiv))
     if (betragText && parseBetrag(betragText) === null) f.unshift('Betrag ist keine gültige Zahl (z. B. 412,50)')
     if (!seiten.length) f.unshift('Mindestens eine Seite (Foto oder PDF) fehlt')
     return f
-  }, [e, betragText, seiten.length])
+  }, [e, betragText, seiten.length, stamm.objekte])
 
   const duplikate = useMemo(() => findeDuplikate(e, [
     ...belege,
@@ -218,21 +220,25 @@ export default function Erfassen() {
           </div>
         </fieldset>
         <label className="feld"><span>Modul *</span>
-          <select value={e.modul} onChange={(x) => setE((a) => ({ ...a, modul: x.target.value, kategorie: '' }))}>
+          <select value={e.modul} onChange={(x) => setE((a) => ({ ...a, modul: x.target.value, kategorie: '', objekt_id: '', einheit_id: '', aufteilung: [], umlagefaehig: false }))}>
             <option value="">– wählen –</option>
             {konfig.module.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
           </select>
         </label>
         {modul && modul.kategorien.length > 0 && (
           <label className="feld"><span>Kategorie *</span>
-            <select value={e.kategorie} onChange={(x) => setze('kategorie', x.target.value)}>
+            <select value={e.kategorie} onChange={(x) => {
+              const k = modul.kategorien.find((y) => y.schluessel === x.target.value)
+              setE((a) => ({ ...a, kategorie: x.target.value, umlagefaehig: modul.ebene === 'objekt' ? !!k?.umlagefaehig_vorschlag : false }))
+            }}>
               <option value="">– wählen –</option>
               {modul.kategorien.map((k) => <option key={k.schluessel} value={k.schluessel}>{k.name}</option>)}
             </select>
           </label>
         )}
-        {modul && (modul.ebene === 'objekt' || modul.ebene === 'kind') && (
-          <p className="klein">Zuordnung zu {modul.ebene === 'objekt' ? 'Objekt' : 'Kind'} folgt in einem späteren Meilenstein. Der Beleg liegt vorerst im Ordner „{modul.ordner}“.</p>
+        {modul?.ebene === 'objekt' && <ObjektZuordnung e={e} setE={setE} stamm={stamm} />}
+        {modul?.ebene === 'kind' && (
+          <p className="klein">Zuordnung zu Kind folgt in einem späteren Meilenstein. Der Beleg liegt vorerst im Ordner „{modul.ordner}“.</p>
         )}
 
         <div className="feld">
