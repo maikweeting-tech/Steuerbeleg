@@ -89,3 +89,16 @@ export async function ersetzeZeile(sheetId: string, blatt: string, id: string, z
   }
   return true
 }
+
+/** Leert alle Zeilen mit dieser Id in Spalte A (z. B. alle Anteile eines Belegs im Blatt Aufteilung). */
+export async function leereZeilen(sheetId: string, blatt: string, id: string): Promise<number> {
+  const ids = await googleFetch(`${SHEETS}/${sheetId}/values/${encodeURIComponent(`'${blatt}'!A:A`)}`)
+  const nummern = ((ids.values ?? []) as string[][]).flatMap((z, i) => (i > 0 && z[0] === id ? [i + 1] : []))
+  if (!nummern.length) return 0
+  const ende = spalte(BLAETTER[blatt].length)
+  await googleFetch(`${SHEETS}/${sheetId}/values:batchClear`, {
+    method: 'POST',
+    body: JSON.stringify({ ranges: nummern.map((n) => `'${blatt}'!A${n}:${ende}${n}`) }),
+  })
+  return nummern.length
+}

@@ -7,8 +7,9 @@ import {
 import type { SteuerjahrKonfig } from '../fachlich/konfiguration'
 import { belegindexName } from './schema'
 import type { Wartend } from './speicher'
-import { aufteilungAusZeile, objektAusZeile, zeileAusAufteilung, type AufteilungZeile } from './stamm'
+import { aufteilungAusZeile, kindAusZeile, objektAusZeile, zeileAusAufteilung, type AufteilungZeile } from './stamm'
 import type { Objekt } from '../fachlich/objekte'
+import type { Kind } from '../fachlich/personen'
 
 type Zelle = string | number
 
@@ -35,7 +36,7 @@ export interface Ablage {
 
 export class SyncFehler extends Error {}
 
-interface Jahr { indexId: string; ordnerId: string; belege: Beleg[]; objekte: Objekt[]; aufteilung: AufteilungZeile[] }
+interface Jahr { indexId: string; ordnerId: string; belege: Beleg[]; objekte: Objekt[]; aufteilung: AufteilungZeile[]; kinder: Kind[] }
 
 /** Ordner und Belegindex eines Jahres finden (Fehler mit Hinweis, wenn sie fehlen). */
 export async function findeIndex(jahr: number, d: SyncDienste): Promise<{ indexId: string; ordnerId: string }> {
@@ -50,12 +51,13 @@ export async function findeIndex(jahr: number, d: SyncDienste): Promise<{ indexI
 
 async function ladeJahr(jahr: number, d: SyncDienste): Promise<Jahr> {
   const { indexId, ordnerId } = await findeIndex(jahr, d)
-  const [b, o, a] = await Promise.all([d.leseBlatt(indexId, 'Belege'), d.leseBlatt(indexId, 'Objekte'), d.leseBlatt(indexId, 'Aufteilung')])
+  const [b, o, a, k] = await Promise.all(['Belege', 'Objekte', 'Aufteilung', 'Kinder'].map((n) => d.leseBlatt(indexId, n)))
   return {
     indexId, ordnerId,
     belege: b.filter((z) => z[0]).map(belegAusZeile),
     objekte: o.filter((z) => z[0]).map(objektAusZeile),
     aufteilung: a.filter((z) => z[0]).map(aufteilungAusZeile),
+    kinder: k.filter((z) => z[0]).map(kindAusZeile),
   }
 }
 
@@ -74,7 +76,7 @@ export async function uebertrage(w: Wartend, d: SyncDienste, jahre: Map<number, 
   let nr = Number(/_B(\d+)_/.exec(datei?.name ?? '')?.[1] ?? 0)
   if (!datei) {
     nr = naechsteBelegnr(j.belege, jahr)
-    const ziel = await d.holeOderErstellePfad(zielOrdnerPfad(w.entwurf, konfig, j.objekte), j.ordnerId)
+    const ziel = await d.holeOderErstellePfad(zielOrdnerPfad(w.entwurf, konfig, j.objekte, j.kinder), j.ordnerId)
     datei = await d.ladeHoch(dateiname(w.entwurf, nr), 'application/pdf', w.pdf, ziel.id, { steuerbeleg_beleg: w.id })
   }
   const jetzt = d.jetzt()

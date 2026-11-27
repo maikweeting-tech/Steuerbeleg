@@ -112,3 +112,20 @@ export async function holeOderErstellePfad(pfad: string[], elternId: string): Pr
   if (!aktuell) throw new Error('Leerer Ordnerpfad')
   return aktuell
 }
+
+/**
+ * Benennt eine Datei um und verschiebt sie in einen anderen Ordner (nur wenn nötig).
+ * Wirft eine verständliche Meldung, wenn Google das Verschieben nicht erlaubt
+ * (z. B. Datei gehört einer anderen Person).
+ */
+export async function verschiebeDatei(id: string, name: string, neuerOrdnerId: string): Promise<DriveDatei> {
+  const info: { name: string; parents?: string[]; capabilities?: { canRename?: boolean; canMoveItemWithinDrive?: boolean } } =
+    await googleFetch(`${DRIVE}/${encodeURIComponent(id)}?fields=name,parents,capabilities(canRename,canMoveItemWithinDrive)&supportsAllDrives=true`)
+  const alt = info.parents ?? []
+  const verschieben = !alt.includes(neuerOrdnerId)
+  if (info.name !== name && info.capabilities?.canRename === false) throw new Error('Die PDF darf mit deinem Konto nicht umbenannt werden. Bitte die Person, der die Datei gehört, die Änderung machen lassen.')
+  if (verschieben && info.capabilities?.canMoveItemWithinDrive === false) throw new Error('Die PDF darf mit deinem Konto nicht verschoben werden (sie gehört einer anderen Person). Bitte die Person, die den Beleg erfasst hat, die Änderung machen lassen.')
+  const p = new URLSearchParams({ supportsAllDrives: 'true', fields: FELDER })
+  if (verschieben) { p.set('addParents', neuerOrdnerId); if (alt.length) p.set('removeParents', alt.join(',')) }
+  return googleFetch(`${DRIVE}/${encodeURIComponent(id)}?${p}`, { method: 'PATCH', body: JSON.stringify({ name }) })
+}
