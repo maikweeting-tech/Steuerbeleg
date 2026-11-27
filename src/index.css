@@ -13,6 +13,8 @@
 body { margin: 0; }
 header { background: var(--blau); color: #fff; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 header h1 { font-size: 1.15rem; margin: 0; }
+header select.jahr { font: inherit; font-size: 1rem; color: #fff; background: transparent; border: 1px solid rgba(255,255,255,.6); border-radius: 6px; padding: 1px 4px; min-height: 0; width: auto; }
+header select.jahr option { color: #000; }
 header a { color: #fff; }
 main { max-width: 760px; margin: 0 auto; padding: 16px; }
 .karte { background: var(--hell); border-radius: 8px; padding: 14px 16px; margin: 0 0 14px; }

@@ -250,3 +250,18 @@ export async function speichereBescheidKopf(jahr: number, k: BescheidKopf) {
   if (!(await ersetzeZeile(indexId, 'Bescheid', KOPF_ID, z))) await haengeAn(indexId, 'Bescheid', [z])
   return ladeStamm(jahr)
 }
+
+/**
+ * Objekte, Einheiten und Kinder aus einem anderen Steuerjahr übernehmen (z. B. 2026 → 2024).
+ * Übernimmt nur, was im Zieljahr noch fehlt (gleiche Id). Ordner für Objekte werden angelegt.
+ */
+export async function uebernehmeStamm(von: number, nach: number): Promise<{ objekte: number; einheiten: number; kinder: number }> {
+  const [q, z] = [await ladeStamm(von), await ladeStamm(nach)]
+  const neu = <T extends { id: string }>(l: T[], da: T[]) => l.filter((x) => !da.some((y) => y.id === x.id))
+  const o = neu(q.objekte, z.objekte), e = neu(q.einheiten, z.einheiten), k = neu(q.kinder, z.kinder)
+  for (const x of o) await speichereObjekt(nach, x)
+  for (const x of e) await speichereEinheit(nach, x)
+  for (const x of k) await speichereKind(nach, x)
+  await ladeStamm(nach)
+  return { objekte: o.length, einheiten: e.length, kinder: k.length }
+}

@@ -366,6 +366,47 @@
       ]
     },
     {
+      "id": "R",
+      "name": "Anlage R – Renten",
+      "ordner": "R_{person}",
+      "ebene": "person",
+      "kategorien": [
+        {
+          "schluessel": "rentenbescheid",
+          "name": "Rentenbescheid und Rentenanpassung",
+          "art": "nachweis",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "rentenbezugsmitteilung",
+          "name": "Leistungsmitteilung (Rentenbezugsmitteilung)",
+          "art": "nachweis",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        },
+        {
+          "schluessel": "werbungskosten_rente",
+          "name": "Werbungskosten zur Rente (z. B. Rentenberatung)",
+          "art": "werbungskosten",
+          "elster_zeile": {
+            "wert": null,
+            "einheit": "Zeile",
+            "quelle": "",
+            "status": "prüfen"
+          }
+        }
+      ]
+    },
+    {
       "id": "SA",
       "name": "Sonderausgaben und Vorsorge",
       "ordner": "Sonderausgaben_Vorsorge",

@@ -124,6 +124,7 @@ export default function BelegFelder({ e, setE, betragText, setBetragText, zahlun
 
       <div className="feld">
         <span className="klein">Steuerjahr: <strong>{jahr ?? '–'}</strong> {e.steuerjahr_manuell ? '(manuell)' : '(aus Zahlungsdatum)'}</span>
+        {jahr !== null && jahr !== AKTUELLES_JAHR && <p className="warnung klein">Dieser Beleg gehört ins Steuerjahr {jahr} und wird im Belegindex {jahr} gespeichert{KONFIGURATIONEN[jahr] ? '' : ' – dieses Jahr ist in der App noch nicht angelegt, Speichern schlägt fehl'}.</p>}
         {!jahrFest && (
           <label className="wahl" style={{ display: 'block' }}>
             <input type="checkbox" checked={e.steuerjahr_manuell} onChange={(x) => setE((a) => ({ ...a, steuerjahr_manuell: x.target.checked, steuerjahr: a.steuerjahr ?? steuerjahrAus(a.zahlungsdatum) }))} />

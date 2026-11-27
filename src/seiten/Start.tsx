@@ -3,9 +3,9 @@ import { abmelden, holeNutzer, istAngemeldet, letzterAnmeldeFehler, starteAnmeld
 import { fehlendeKennungen } from '../google/umgebung'
 import { richteEin, sortiereKandidaten, sucheWurzel, speichereWurzel, verbindeOrdnerPerLink, type Ergebnis } from '../daten/einrichtung'
 import { findeWurzeln, kinder, type DriveDatei } from '../google/drive'
-import { KONFIGURATIONEN, AKTUELLES_JAHR } from '../konfig'
+import { KONFIGURATIONEN, AKTUELLES_JAHR, JAHRE } from '../konfig'
 import { belegindexName } from '../daten/schema'
-import { aktualisiereBelege, starteSync } from '../daten/dienste'
+import { aktualisiereBelege, starteSync, uebernehmeStamm } from '../daten/dienste'
 import { GrosseKnoepfe } from '../komponenten/Schnellerfassung'
 import { useDaten, useStamm } from '../komponenten/hooks'
 import { vollstaendigkeit } from '../fachlich/vorlagen'
@@ -206,6 +206,16 @@ export default function Start() {
               <a href={ergebnis.belegindex.webViewLink} target="_blank" rel="noreferrer">{belegindexName(konfig.steuerjahr)}</a> bereit.
             </p>
           )}
+          {JAHRE.filter((j) => j !== konfig.steuerjahr).map((j) => (
+            <details key={j} style={{ marginTop: 8 }}>
+              <summary className="klein">Objekte, Einheiten und Kinder aus {j} übernehmen</summary>
+              <p className="klein">Übernimmt nur, was in {konfig.steuerjahr} noch fehlt. Mieten, Fahrten und Belege werden nicht übernommen. Vorher „Struktur {konfig.steuerjahr} prüfen / ergänzen“ tippen.</p>
+              <button className="zweit" disabled={!!laeuft} onClick={() => aufgabe('Übernehme …', async () => {
+                const r = await uebernehmeStamm(j, konfig.steuerjahr)
+                setMeldung(`Aus ${j} übernommen: ${r.objekte} Objekt(e), ${r.einheiten} Einheit(en), ${r.kinder} Kind(er).`)
+              })}>Aus {j} übernehmen</button>
+            </details>
+          ))}
         </div>
       )}
 

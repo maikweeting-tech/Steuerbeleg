@@ -16,7 +16,7 @@ import Bescheid from './seiten/Bescheid'
 import { starteAnmeldung, stilleAnmeldungMoeglich } from './google/auth'
 import { automatischerSync } from './daten/dienste'
 import { useDaten } from './komponenten/hooks'
-import { AKTUELLES_JAHR } from './konfig'
+import { AKTUELLES_JAHR, JAHRE, waehleJahr } from './konfig'
 import { KameraKnopf } from './komponenten/Schnellerfassung'
 import UpdateHinweis from './komponenten/UpdateHinweis'
 
@@ -54,7 +54,11 @@ export default function App() {
   return (
     <HashRouter>
       <header>
-        <h1>Steuerbeleg</h1>
+        <h1>Steuerbeleg{' '}
+          <select className="jahr" aria-label="Steuerjahr" value={AKTUELLES_JAHR} onChange={(e) => waehleJahr(Number(e.target.value))}>
+            {JAHRE.map((j) => <option key={j} value={j}>{j}</option>)}
+          </select>
+        </h1>
         <Navigation />
       </header>
       <main>
