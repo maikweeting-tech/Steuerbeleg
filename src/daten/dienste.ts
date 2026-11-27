@@ -1,11 +1,14 @@
 // Verdrahtung der Synchronisierung mit Google und IndexedDB sowie automatischer Start.
-import { KONFIGURATIONEN } from '../konfig'
+import { AKTUELLES_JAHR, KONFIGURATIONEN } from '../konfig'
 import { istAngemeldet } from '../google/auth'
 import { findeBelegDatei, findeInOrdner, holeOderErstellePfad, ladeHoch, ORDNER_MIME, SHEET_MIME } from '../google/drive'
-import { haengeAn, leseBlatt } from '../google/sheets'
+import { ergaenzeBlaetter, ersetzeZeile, haengeAn, leseBlatt } from '../google/sheets'
 import { gespeicherteWurzel } from './einrichtung'
 import { belegCache, melde, warteschlange } from './speicher'
-import { ladeBelege, synchronisiere, type SyncDienste, type SyncErgebnis } from './sync'
+import { findeIndex, ladeBelege, synchronisiere, type SyncDienste, type SyncErgebnis } from './sync'
+import { LEER, stammAus, zeileAusEinheit, zeileAusEinnahme, zeileAusObjekt, type Stamm } from './stamm'
+import { ordnerName } from '../fachlich/konfiguration'
+import type { Einheit, Einnahme, Objekt } from '../fachlich/objekte'
 
 export function nutzerEmail(): string {
   try { return localStorage.getItem('steuerbeleg.email') ?? '' } catch { return '' }
@@ -39,6 +42,8 @@ export async function starteSync(): Promise<SyncErgebnis | null> {
       entferne: warteschlange.entferne,
       cacheSchreiben: belegCache.schreibe,
     })
+    // Lokale Kopie von Belegindex und Objekten auffrischen (für Offline-Erfassung und Duplikate)
+    if (gespeicherteWurzel()) await aktualisiereBelege(AKTUELLES_JAHR).catch(() => undefined)
     return syncStatus.letztes
   } finally {
     syncStatus.laeuft = false
@@ -50,10 +55,74 @@ export async function starteSync(): Promise<SyncErgebnis | null> {
 export async function aktualisiereBelege(jahr: number) {
   const b = await ladeBelege(jahr, dienste)
   await belegCache.schreibe(jahr, b)
+  await ladeStamm(jahr)
   return b
 }
 
 export function automatischerSync() {
   window.addEventListener('online', () => void starteSync())
   void starteSync()
+}
+
+// ---------------------------------------------------------------- Stammdaten Anlage V (online)
+
+
+const STAMM_BLAETTER = ['Objekte', 'Einheiten', 'Einnahmen', 'Aufteilung']
+
+export async function ladeStamm(jahr: number): Promise<Stamm> {
+  const { indexId } = await findeIndex(jahr, dienste)
+  const lesen = () => Promise.all(STAMM_BLAETTER.map((b) => leseBlatt(indexId, b)))
+  // Belegindex aus M1/M2: fehlendes Blatt „Einnahmen“ bzw. neue Spalten einmalig ergänzen
+  const zeilen = await lesen().catch(async () => { await ergaenzeBlaetter(indexId); return lesen() })
+  const s = stammAus(Object.fromEntries(STAMM_BLAETTER.map((b, i) => [b, zeilen[i]])))
+  await stammCache.schreibe(jahr, s)
+  return s
+}
+
+async function protokoll(indexId: string, aktion: string, id: string, neu: string) {
+  await haengeAn(indexId, 'Protokoll', [[new Date().toISOString(), nutzerEmail(), aktion, id, '', '', neu]])
+}
+
+/** Legt ein Objekt an (inkl. Ordner V_Vermietung/<Objekt>/<Kategorien>) oder ändert es. */
+export async function speichereObjekt(jahr: number, o: Objekt) {
+  const { indexId, ordnerId } = await findeIndex(jahr, dienste)
+  const vorhanden = await ersetzeZeile(indexId, 'Objekte', o.id, zeileAusObjekt(o))
+  if (!vorhanden) {
+    await haengeAn(indexId, 'Objekte', [zeileAusObjekt(o)])
+    const m = KONFIGURATIONEN[jahr].module.find((x) => x.ebene === 'objekt')
+    if (m) {
+      const basis = [...m.ordner.split('/').map(ordnerName), ordnerName(o.bezeichnung)]
+      const objOrdner = await holeOderErstellePfad(basis, ordnerId)
+      for (const k of m.kategorien) await holeOderErstellePfad([ordnerName(k.name)], objOrdner.id)
+    }
+  }
+  await protokoll(indexId, vorhanden ? 'objekt geändert' : 'objekt angelegt', o.id, o.bezeichnung)
+  return ladeStamm(jahr)
+}
+
+export async function speichereEinheit(jahr: number, e: Einheit, loeschen = false) {
+  const { indexId } = await findeIndex(jahr, dienste)
+  if (loeschen) await ersetzeZeile(indexId, 'Einheiten', e.id, null)
+  else if (!(await ersetzeZeile(indexId, 'Einheiten', e.id, zeileAusEinheit(e)))) await haengeAn(indexId, 'Einheiten', [zeileAusEinheit(e)])
+  await protokoll(indexId, loeschen ? 'einheit gelöscht' : 'einheit gespeichert', e.id, e.bezeichnung)
+  return ladeStamm(jahr)
+}
+
+export async function speichereEinnahmen(jahr: number, liste: Einnahme[]) {
+  const { indexId } = await findeIndex(jahr, dienste)
+  await haengeAn(indexId, 'Einnahmen', liste.map(zeileAusEinnahme))
+  await protokoll(indexId, 'einnahmen erfasst', liste[0]?.objekt_id ?? '', `${liste.length} Zeile(n)`)
+  return ladeStamm(jahr)
+}
+
+export async function loescheEinnahme(jahr: number, id: string) {
+  const { indexId } = await findeIndex(jahr, dienste)
+  await ersetzeZeile(indexId, 'Einnahmen', id, null)
+  await protokoll(indexId, 'einnahme gelöscht', id, '')
+  return ladeStamm(jahr)
+}
+
+export const stammCache = {
+  lies: async (jahr: number): Promise<Stamm> => (await belegCache.liesRoh<Stamm>(`stamm_${jahr}`)) ?? LEER,
+  schreibe: (jahr: number, s: Stamm) => belegCache.schreibeRoh(`stamm_${jahr}`, s),
 }

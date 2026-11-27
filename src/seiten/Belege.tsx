@@ -6,7 +6,7 @@ import { aktualisiereBelege, starteSync } from '../daten/dienste'
 import { warteschlange } from '../daten/speicher'
 import { istAngemeldet, starteAnmeldung } from '../google/auth'
 import { formatDatum, formatEuro } from '../fachlich/format'
-import { useDaten } from '../komponenten/hooks'
+import { useDaten, useStamm } from '../komponenten/hooks'
 
 const konfig = KONFIGURATIONEN[AKTUELLES_JAHR]
 const modulName = (id: string) => konfig.module.find((m) => m.id === id)?.name.split(' – ')[0] ?? id
@@ -15,6 +15,9 @@ const personName = (p: string) => konfig.personen.find((x) => x.id === p)?.name 
 
 export default function Belege() {
   const { wartend, belege, laeuft } = useDaten(AKTUELLES_JAHR)
+  const stamm = useStamm(AKTUELLES_JAHR)
+  const objektText = (id: string, oid: string) =>
+    stamm.aufteilung.some((a) => a.beleg_id === id) ? ' · aufgeteilt' : oid ? ` · ${stamm.objekte.find((o) => o.id === oid)?.bezeichnung ?? 'Objekt?'}` : ''
   const meldung = (useLocation().state as { meldung?: string } | null)?.meldung
   const [fehler, setFehler] = useState('')
   const [lade, setLade] = useState(false)
@@ -86,7 +89,7 @@ export default function Belege() {
                   <td>{formatDatum(b.belegdatum)}</td>
                   <td>
                     {b.datei_ids ? <a href={`https://drive.google.com/file/d/${b.datei_ids.split(',')[0]}/view`} target="_blank" rel="noreferrer">{b.aussteller}</a> : b.aussteller}
-                    <div className="klein">{modulName(b.modul)}{b.kategorie ? ` · ${katName(b.modul, b.kategorie)}` : ''} · {personName(b.person)}{b.status !== 'offen' ? ` · ${b.status}` : ''}</div>
+                    <div className="klein">{modulName(b.modul)}{b.kategorie ? ` · ${katName(b.modul, b.kategorie)}` : ''}{objektText(b.id, b.objekt_id)} · {personName(b.person)}{b.status !== 'offen' ? ` · ${b.status}` : ''}</div>
                   </td>
                   <td className="betrag">{formatEuro(b.betrag_ct ?? 0)}</td>
                 </tr>

@@ -28,12 +28,22 @@ export async function ergaenzeBlaetter(sheetId: string) {
   const standard = vorhanden.find((s) => /^(Tabelle1|Sheet1|Blatt 1)$/.test(s.title))
   if (requests.length && standard && vorhanden.length === 1) requests.push({ deleteSheet: { sheetId: standard.sheetId } })
   if (requests.length) await googleFetch(`${SHEETS}/${sheetId}:batchUpdate`, { method: 'POST', body: JSON.stringify({ requests }) })
-  if (fehlend.length) {
+  // Kopfzeilen schreiben: neue Blätter vollständig, bestehende nur, wenn Spalten am Ende fehlen
+  const bestehend = Object.keys(BLAETTER).filter((n) => namen.has(n))
+  const koepfe: Record<string, string[]> = {}
+  if (bestehend.length) {
+    const p = new URLSearchParams()
+    bestehend.forEach((n) => p.append('ranges', `'${n}'!1:1`))
+    const d = await googleFetch(`${SHEETS}/${sheetId}/values:batchGet?${p}`)
+    bestehend.forEach((n, i) => { koepfe[n] = (d.valueRanges?.[i]?.values?.[0] ?? []) as string[] })
+  }
+  const zuSchreiben = Object.keys(BLAETTER).filter((n) => fehlend.includes(n) || (koepfe[n] ?? []).length < BLAETTER[n].length)
+  if (zuSchreiben.length) {
     await googleFetch(`${SHEETS}/${sheetId}/values:batchUpdate`, {
       method: 'POST',
       body: JSON.stringify({
         valueInputOption: 'RAW',
-        data: fehlend.map((n) => ({ range: `'${n}'!A1`, values: [BLAETTER[n]] })),
+        data: zuSchreiben.map((n) => ({ range: `'${n}'!A1`, values: [BLAETTER[n]] })),
       }),
     })
   }
@@ -55,4 +65,27 @@ export async function haengeAn(sheetId: string, blatt: string, zeilen: Zelle[][]
     method: 'POST',
     body: JSON.stringify({ values: zeilen }),
   })
+}
+
+/** Spaltenbuchstabe für Spalte n (1 = A). */
+export function spalte(n: number): string {
+  let s = ''
+  for (; n > 0; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + ((n - 1) % 26)) + s
+  return s
+}
+
+/** Überschreibt die Zeile mit der Id in Spalte A (Zeilennummer wird gesucht). Gibt false zurück, wenn nicht gefunden. */
+export async function ersetzeZeile(sheetId: string, blatt: string, id: string, zeile: Zelle[] | null): Promise<boolean> {
+  const ids = await googleFetch(`${SHEETS}/${sheetId}/values/${encodeURIComponent(`'${blatt}'!A:A`)}`)
+  const idx = ((ids.values ?? []) as string[][]).findIndex((z) => z[0] === id)
+  if (idx < 1) return false
+  const nr = idx + 1
+  if (zeile === null) {
+    // Leeren statt Löschen: Zeilennummern anderer Einträge bleiben stabil; leere Zeilen werden beim Lesen übersprungen
+    await googleFetch(`${SHEETS}/${sheetId}/values/${encodeURIComponent(`'${blatt}'!A${nr}:${spalte(BLAETTER[blatt].length)}${nr}`)}:clear`, { method: 'POST', body: '{}' })
+  } else {
+    const p = new URLSearchParams({ valueInputOption: 'RAW' })
+    await googleFetch(`${SHEETS}/${sheetId}/values/${encodeURIComponent(`'${blatt}'!A${nr}`)}?${p}`, { method: 'PUT', body: JSON.stringify({ values: [zeile] }) })
+  }
+  return true
 }

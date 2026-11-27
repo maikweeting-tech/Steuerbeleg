@@ -7,6 +7,8 @@ import {
 import type { SteuerjahrKonfig } from '../fachlich/konfiguration'
 import { belegindexName } from './schema'
 import type { Wartend } from './speicher'
+import { aufteilungAusZeile, objektAusZeile, zeileAusAufteilung, type AufteilungZeile } from './stamm'
+import type { Objekt } from '../fachlich/objekte'
 
 type Zelle = string | number
 
@@ -33,17 +35,28 @@ export interface Ablage {
 
 export class SyncFehler extends Error {}
 
-interface Jahr { indexId: string; ordnerId: string; belege: Beleg[] }
+interface Jahr { indexId: string; ordnerId: string; belege: Beleg[]; objekte: Objekt[]; aufteilung: AufteilungZeile[] }
 
-async function ladeJahr(jahr: number, d: SyncDienste): Promise<Jahr> {
+/** Ordner und Belegindex eines Jahres finden (Fehler mit Hinweis, wenn sie fehlen). */
+export async function findeIndex(jahr: number, d: SyncDienste): Promise<{ indexId: string; ordnerId: string }> {
   const wurzel = d.wurzelId()
   if (!wurzel) throw new SyncFehler('Kein Ordner „Steuer“ verbunden. Bitte auf der Startseite verbinden.')
   const ordner = await d.findeOrdner(String(jahr), wurzel)
   if (!ordner) throw new SyncFehler(`Ordner „Steuer/${jahr}“ fehlt. Bitte auf der Startseite „Struktur prüfen“.`)
   const index = await d.findeSheet(belegindexName(jahr), ordner.id)
   if (!index) throw new SyncFehler(`${belegindexName(jahr)} fehlt. Bitte auf der Startseite „Struktur prüfen“.`)
-  const belege = (await d.leseBlatt(index.id, 'Belege')).filter((z) => z[0]).map(belegAusZeile)
-  return { indexId: index.id, ordnerId: ordner.id, belege }
+  return { indexId: index.id, ordnerId: ordner.id }
+}
+
+async function ladeJahr(jahr: number, d: SyncDienste): Promise<Jahr> {
+  const { indexId, ordnerId } = await findeIndex(jahr, d)
+  const [b, o, a] = await Promise.all([d.leseBlatt(indexId, 'Belege'), d.leseBlatt(indexId, 'Objekte'), d.leseBlatt(indexId, 'Aufteilung')])
+  return {
+    indexId, ordnerId,
+    belege: b.filter((z) => z[0]).map(belegAusZeile),
+    objekte: o.filter((z) => z[0]).map(objektAusZeile),
+    aufteilung: a.filter((z) => z[0]).map(aufteilungAusZeile),
+  }
 }
 
 /** Überträgt einen Beleg. Gibt den fertigen Beleg zurück. */
@@ -61,7 +74,7 @@ export async function uebertrage(w: Wartend, d: SyncDienste, jahre: Map<number, 
   let nr = Number(/_B(\d+)_/.exec(datei?.name ?? '')?.[1] ?? 0)
   if (!datei) {
     nr = naechsteBelegnr(j.belege, jahr)
-    const ziel = await d.holeOderErstellePfad(zielOrdnerPfad(w.entwurf, konfig), j.ordnerId)
+    const ziel = await d.holeOderErstellePfad(zielOrdnerPfad(w.entwurf, konfig, j.objekte), j.ordnerId)
     datei = await d.ladeHoch(dateiname(w.entwurf, nr), 'application/pdf', w.pdf, ziel.id, { steuerbeleg_beleg: w.id })
   }
   const jetzt = d.jetzt()
@@ -69,6 +82,11 @@ export async function uebertrage(w: Wartend, d: SyncDienste, jahre: Map<number, 
     ...w.entwurf, steuerjahr: jahr, belegnr: nr || naechsteBelegnr(j.belege, jahr),
     datei_ids: datei.id, dateiname: datei.name,
     erfasst_von: w.erfasst_von, erfasst_am: w.erfasst_am, geaendert_von: d.nutzer(), geaendert_am: jetzt, version: 1,
+  }
+  // Aufteilung vor der Belegzeile schreiben; bei Wiederholung nur fehlende Anteile ergänzen
+  if (w.entwurf.aufteilung.length && !j.aufteilung.some((a) => a.beleg_id === w.id)) {
+    await d.haengeAn(j.indexId, 'Aufteilung', w.entwurf.aufteilung.map((a) => zeileAusAufteilung(w.id, a)))
+    j.aufteilung.push(...w.entwurf.aufteilung.map((a) => ({ ...a, beleg_id: w.id })))
   }
   await d.haengeAn(j.indexId, 'Belege', [zeileAus(beleg)])
   await d.haengeAn(j.indexId, 'Protokoll', [[jetzt, d.nutzer(), 'erfasst', w.id, '', '', datei.name]])

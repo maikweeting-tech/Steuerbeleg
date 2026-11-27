@@ -15,7 +15,7 @@ function wartend(id: string, x: Partial<Wartend['entwurf']> = {}): Wartend {
 }
 
 function fakes(opts: { ohneIndex?: boolean; upFehler?: boolean } = {}) {
-  const blaetter: Record<string, (string | number)[][]> = { Belege: [], Protokoll: [] }
+  const blaetter: Record<string, (string | number)[][]> = { Belege: [], Protokoll: [], Objekte: [['oA', 'V', 'Haus A']], Aufteilung: [] }
   const dateien: { id: string; name: string; eltern: string; app: Record<string, string> }[] = []
   const ordner: string[] = []
   const d: SyncDienste = {
@@ -90,6 +90,22 @@ describe('Synchronisierung', () => {
     f.setze([wartend('a')])
     await synchronisiere(f.d, f.a)
     expect(f.liste()[0].fehler).toMatch(/Struktur prüfen/)
+  })
+})
+
+describe('Anlage V', () => {
+  it('Objektordner und Aufteilung', async () => {
+    const f = fakes()
+    f.setze([
+      wartend('a', { modul: 'V', kategorie: 'grundsteuer', person: 'gemeinsam', objekt_id: 'oA' }),
+      wartend('bb', { modul: 'V', kategorie: 'grundsteuer', person: 'gemeinsam', aufteilung: [{ objekt_id: 'oA', einheit_id: '', anteil_prozent: 70 }, { objekt_id: 'oB', einheit_id: '', anteil_prozent: 30 }] }),
+    ])
+    await synchronisiere(f.d, f.a)
+    expect(f.dateien[0].eltern).toBe('O:V_Vermietung/Haus A/Grundsteuer')
+    expect(f.dateien[1].eltern).toBe('O:V_Vermietung/Haus A/Grundsteuer')
+    expect(f.blaetter.Aufteilung).toEqual([['bb', 'oA', '', 70], ['bb', 'oB', '', 30]])
+    expect(f.blaetter.Belege[0][BLAETTER.Belege.indexOf('objekt_id')]).toBe('oA')
+    expect(f.blaetter.Belege[1][BLAETTER.Belege.indexOf('objekt_id')]).toBe('')
   })
 })
 

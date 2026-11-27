@@ -15,6 +15,8 @@ export interface Kategorie {
   name: string
   art: 'einnahme' | 'werbungskosten' | 'ausgabe' | 'nachweis' | 'info'
   elster_zeile: KonfigWert
+  /** Vorschlag „umlagefähig“ (Betriebskosten) für Anlage V – nur Vorschlag, prüfen */
+  umlagefaehig_vorschlag?: boolean
 }
 
 /** Ebene unterhalb des Modulordners: je Objekt, je Kind, je Person oder direkt Kategorien. */
