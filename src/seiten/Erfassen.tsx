@@ -15,6 +15,7 @@ import { gespeicherteWurzel } from '../daten/einrichtung'
 import { useDaten } from '../komponenten/hooks'
 import Zuschnitt from '../komponenten/Zuschnitt'
 import { holeGeteilteDateien } from '../erfassung/teilen'
+import { nimmVorgemerkte } from '../erfassung/uebergabe'
 
 type Eintrag =
   | (Seite & { art: 'bild'; bildUrl: string })
@@ -56,6 +57,12 @@ export default function Erfassen() {
     }
     setSeiten((a) => [...a, ...neu])
   }, [])
+
+  // Vom Kameraknopf (Start/schwebend) übergebene Fotos übernehmen
+  useEffect(() => {
+    const d = nimmVorgemerkte()
+    if (d.length) void fuegeHinzu(d)
+  }, [ort.search, fuegeHinzu])
 
   // Über das Teilen-Menü (Android) geschickte Dateien übernehmen
   useEffect(() => {
@@ -129,9 +136,9 @@ export default function Erfassen() {
       <div className="karte">
         <h2>1. Seiten</h2>
         <div className="zeile">
-          <label className="knopf">
+          <label className="knopf gross-foto">
             <input type="file" accept="image/*" capture="environment" hidden onChange={(x) => { void fuegeHinzu([...(x.target.files ?? [])]); x.target.value = '' }} />
-            <span>📷 Foto aufnehmen</span>
+            <span>📷 {seiten.length ? 'Weitere Seite fotografieren' : 'Foto aufnehmen'}</span>
           </label>
           <label className="knopf zweit">
             <input type="file" accept="image/*,application/pdf" multiple hidden onChange={(x) => { void fuegeHinzu([...(x.target.files ?? [])]); x.target.value = '' }} />

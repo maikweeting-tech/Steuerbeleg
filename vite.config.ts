@@ -30,6 +30,10 @@ export default defineConfig(() => ({
         display: 'standalone',
         background_color: '#ffffff',
         theme_color: '#1f5f8b',
+        shortcuts: [
+          { name: 'Beleg fotografieren', short_name: 'Beleg', url: './#/erfassen', icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }] },
+          { name: 'Belege ansehen', short_name: 'Belege', url: './#/belege', icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }] },
+        ],
         share_target: {
           action: 'teilen',
           method: 'POST',

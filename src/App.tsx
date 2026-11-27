@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { HashRouter, NavLink, Route, Routes } from 'react-router-dom'
+import { HashRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import Start from './seiten/Start'
 import Info from './seiten/Info'
 import Erfassen from './seiten/Erfassen'
@@ -8,6 +8,11 @@ import { starteAnmeldung, stilleAnmeldungMoeglich } from './google/auth'
 import { automatischerSync } from './daten/dienste'
 import { useDaten } from './komponenten/hooks'
 import { AKTUELLES_JAHR } from './konfig'
+import { KameraKnopf } from './komponenten/Schnellerfassung'
+
+function Kamera() {
+  return useLocation().pathname === '/erfassen' ? null : <KameraKnopf />
+}
 
 function Navigation() {
   const { wartend } = useDaten(AKTUELLES_JAHR)
@@ -42,6 +47,7 @@ export default function App() {
           <Route path="/info" element={<Info />} />
         </Routes>
       </main>
+      <Kamera />
       <footer className="klein">Die App ersetzt keine Steuerberatung. Sie berechnet keine Steuer und übermittelt nichts an ELSTER.</footer>
     </HashRouter>
   )

@@ -6,6 +6,9 @@ import { kinder, type DriveDatei } from '../google/drive'
 import { KONFIGURATIONEN, AKTUELLES_JAHR } from '../konfig'
 import { belegindexName } from '../daten/schema'
 import { starteSync } from '../daten/dienste'
+import { GrosseKnoepfe } from '../komponenten/Schnellerfassung'
+import { useDaten } from '../komponenten/hooks'
+import { Link } from 'react-router-dom'
 
 const konfig = KONFIGURATIONEN[AKTUELLES_JAHR]
 
@@ -19,6 +22,7 @@ export default function Start() {
   const [pruefung, setPruefung] = useState<string[] | null>(null)
   const [meldung, setMeldung] = useState('')
   const fehlend = fehlendeKennungen()
+  const { wartend, belege } = useDaten(konfig.steuerjahr)
 
   const aufgabe = useCallback(async (titel: string, f: () => Promise<void>) => {
     setFehler('')
@@ -54,8 +58,15 @@ export default function Start() {
 
   return (
     <>
-      <p className="hinweis">Die App ersetzt keine Steuerberatung.</p>
+      <GrosseKnoepfe />
+      <div className="status-zeile">
+        <Link to="/belege">{belege.length} Beleg{belege.length === 1 ? '' : 'e'} {konfig.steuerjahr}</Link>
+        {wartend.length > 0 && <span className="marke-gelb">{wartend.length} warten auf Übertragung</span>}
+        {!nutzer && !laeuft && <span className="fehler klein">Nicht angemeldet – Belege werden erst nach der Anmeldung übertragen.</span>}
+      </div>
 
+      <details className="einrichtung" open={!(nutzer && wurzel)}>
+      <summary>Einrichtung {nutzer && wurzel ? '✓ (Anmeldung, Ordner, Freigabe)' : '– bitte abschließen'}</summary>
       <div className="karte">
         <h2>1. Anmeldung</h2>
         {nutzer ? (
@@ -146,6 +157,9 @@ export default function Start() {
           <a href={wurzel.webViewLink} target="_blank" rel="noreferrer"><button type="button" className="zweit">Ordner „Steuer“ in Drive öffnen</button></a>
         </div>
       )}
+
+      </details>
+      <p className="hinweis">Die App ersetzt keine Steuerberatung.</p>
 
       {laeuft && <p className="klein">{laeuft}</p>}
       {fehler && <p className="fehler">{fehler}</p>}
