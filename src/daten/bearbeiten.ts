@@ -27,7 +27,7 @@ export interface BearbeitenDienste {
 /** Felder, die im Protokoll einzeln erscheinen. */
 const FELDER: (keyof BelegEntwurf)[] = [
   'belegdatum', 'zahlungsdatum', 'betrag_ct', 'aussteller', 'person', 'modul', 'kategorie', 'status', 'notiz',
-  'objekt_id', 'einheit_id', 'umlagefaehig', 'kind_id', 'zahlungsart', 'arbeitskosten_ct', 'material_ct',
+  'objekt_id', 'einheit_id', 'umlagefaehig', 'kind_id', 'zahlungsart', 'arbeitskosten_ct', 'material_ct', 'frage',
 ]
 
 const text = (v: unknown) => (v === null || v === undefined ? '' : String(v))
@@ -63,7 +63,8 @@ export async function aendereBeleg(alt: Beleg, neu: BelegEntwurf, d: BearbeitenD
   const name = dateiname(neu, alt.belegnr)
   const pfadAlt = zielOrdnerPfad(alt, d.konfig, d.stamm.objekte, d.stamm.kinder).join('/')
   const pfadNeu = zielOrdnerPfad(neu, d.konfig, d.stamm.objekte, d.stamm.kinder)
-  if (alt.datei_ids && (name !== alt.dateiname || pfadNeu.join('/') !== pfadAlt)) {
+  // Belege aus Vorlagen (leerer Dateiname) verweisen auf einen Dauerbeleg – der bleibt, wo er ist
+  if (alt.datei_ids && alt.dateiname && (name !== alt.dateiname || pfadNeu.join('/') !== pfadAlt)) {
     const id = alt.datei_ids.split(',')[0]
     const ordner = await d.holeOderErstellePfad(pfadNeu, d.ordnerId)
     const erg = await d.verschiebeDatei(id, name, ordner.id)
@@ -124,7 +125,7 @@ export function entwurfAus(b: Beleg, aufteilung: Anteil[]): BelegEntwurf {
     id: b.id, belegdatum: b.belegdatum, zahlungsdatum: b.zahlungsdatum, betrag_ct: b.betrag_ct, aussteller: b.aussteller,
     person: b.person, modul: b.modul, kategorie: b.kategorie, steuerjahr: b.steuerjahr, steuerjahr_manuell: b.steuerjahr_manuell,
     status: b.status, notiz: b.notiz, objekt_id: b.objekt_id, einheit_id: b.einheit_id, umlagefaehig: b.umlagefaehig,
-    aufteilung: [], kind_id: b.kind_id, zahlungsart: b.zahlungsart, arbeitskosten_ct: b.arbeitskosten_ct, material_ct: b.material_ct,
+    aufteilung: [], kind_id: b.kind_id, zahlungsart: b.zahlungsart, arbeitskosten_ct: b.arbeitskosten_ct, material_ct: b.material_ct, frage: b.frage,
   }
   return { ...e, aufteilung: aufteilung.map(({ objekt_id, einheit_id, anteil_prozent }) => ({ objekt_id, einheit_id, anteil_prozent })) }
 }

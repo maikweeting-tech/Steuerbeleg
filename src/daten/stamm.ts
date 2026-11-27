@@ -3,6 +3,8 @@
 import { BLAETTER } from './schema'
 import type { Anteil, Einheit, Einnahme, Objekt, Umlageschluessel } from '../fachlich/objekte'
 import type { Arbeitstage, Fahrt, Fahrtzweck, Kind } from '../fachlich/personen'
+import type { Rhythmus, Vorlage } from '../fachlich/vorlagen'
+import type { Buchung, Markierung } from '../fachlich/kontoauszug'
 
 type Zelle = string | number
 type Zeile = (Zelle | undefined)[]
@@ -76,6 +78,34 @@ export function arbeitstageAusZeile(z: Zeile): Arbeitstage {
 export const zeileAusArbeitstage = (a: Arbeitstage): Zelle[] =>
   [a.person, a.jahr, a.entfernung_km ?? '', a.arbeitstage, a.homeoffice_tage]
 
+// ---------------------------------------------------------------- ab M6: Vorlagen, Buchungen
+
+export function vorlageAusZeile(z: Zeile): Vorlage {
+  const g = lies('Vorlagen', z)
+  return {
+    id: g('id'), bezeichnung: g('bezeichnung'), aussteller: g('aussteller'), betrag_ct: zahl(g('betrag_ct')),
+    rhythmus: (['monatlich', 'vierteljaehrlich', 'jaehrlich'].includes(g('rhythmus')) ? g('rhythmus') : 'jaehrlich') as Rhythmus,
+    modul: g('modul'), kategorie: g('kategorie'), person: g('person'), objekt_id: g('objekt_id'), einheit_id: g('einheit_id'),
+    kind_id: g('kind_id'), dauerbeleg_datei_id: g('dauerbeleg_datei_id'), aktiv: g('aktiv') !== 'nein', faellig_monat: Number(g('faellig_monat') || 1),
+  }
+}
+export function zeileAusVorlage(v: Vorlage): Zelle[] {
+  const w: Record<string, Zelle> = { ...v, betrag_ct: v.betrag_ct ?? '', aktiv: v.aktiv ? 'ja' : 'nein' } as unknown as Record<string, Zelle>
+  return BLAETTER.Vorlagen.map((s) => w[s] ?? '')
+}
+
+export function buchungAusZeile(z: Zeile): Buchung & { markierung: Markierung; beleg_id: string; notiz: string } {
+  const g = lies('Buchungen', z)
+  return {
+    id: g('id'), konto: g('konto'), datum: g('datum'), betrag_ct: Number(g('betrag_ct') || 0), gegenseite: g('gegenseite'), zweck: g('zweck'),
+    markierung: (g('markierung') || 'beleg_fehlt') as Markierung, beleg_id: g('beleg_id'), notiz: g('notiz'),
+  }
+}
+export function zeileAusBuchung(b: Buchung, m: Markierung, beleg_id: string, notiz: string, von: string, am: string): Zelle[] {
+  const w: Record<string, Zelle> = { ...b, markierung: m, beleg_id, notiz, markiert_von: von, markiert_am: am }
+  return BLAETTER.Buchungen.map((s) => w[s] ?? '')
+}
+
 export interface Stamm {
   objekte: Objekt[]
   einheiten: Einheit[]
@@ -86,9 +116,11 @@ export interface Stamm {
   arbeitstage: Arbeitstage[]
   /** offene Verschiebe-Aufträge (beleg_id) */
   pdfOffen: string[]
+  vorlagen: Vorlage[]
+  buchungen: ReturnType<typeof buchungAusZeile>[]
 }
 
-export const LEER: Stamm = { objekte: [], einheiten: [], einnahmen: [], aufteilung: [], kinder: [], fahrten: [], arbeitstage: [], pdfOffen: [] }
+export const LEER: Stamm = { objekte: [], einheiten: [], einnahmen: [], aufteilung: [], kinder: [], fahrten: [], arbeitstage: [], pdfOffen: [], vorlagen: [], buchungen: [] }
 
 export function stammAus(blaetter: Record<string, Zeile[]>): Stamm {
   const voll = (l: Zeile[] | undefined) => (l ?? []).filter((z) => z[0] !== undefined && z[0] !== '')
@@ -101,5 +133,7 @@ export function stammAus(blaetter: Record<string, Zeile[]>): Stamm {
     fahrten: voll(blaetter.Fahrten).map(fahrtAusZeile),
     arbeitstage: voll(blaetter.Arbeitstage).map(arbeitstageAusZeile),
     pdfOffen: voll(blaetter.Auftraege).filter((z) => !z[8]).map((z) => String(z[2] ?? '')),
+    vorlagen: voll(blaetter.Vorlagen).map(vorlageAusZeile),
+    buchungen: voll(blaetter.Buchungen).map(buchungAusZeile),
   }
 }

@@ -10,6 +10,8 @@ export const BLAETTER: Record<string, string[]> = {
     'erfasst_von', 'erfasst_am', 'geaendert_von', 'geaendert_am', 'version',
     // ab M3 (nur am Ende anhängen!)
     'umlagefaehig',
+    // ab M6 (E10)
+    'frage',
   ],
   Aufteilung: ['beleg_id', 'objekt_id', 'einheit_id', 'anteil_prozent'],
   Objekte: [
@@ -26,6 +28,12 @@ export const BLAETTER: Record<string, string[]> = {
   Zuordnungen: ['aussteller', 'modul', 'kategorie', 'objekt_id', 'person', 'zuletzt'],
   // ab M4: Aufträge an den Eigentümer einer PDF (Verschieben darf bei Google meist nur der Eigentümer)
   Auftraege: ['id', 'art', 'beleg_id', 'datei_id', 'ziel_pfad', 'name', 'angelegt_von', 'angelegt_am', 'erledigt_am'],
+  // ab M6: wiederkehrende/erwartete Belege (E6) und markierte Kontobuchungen (E7)
+  Vorlagen: [
+    'id', 'bezeichnung', 'aussteller', 'betrag_ct', 'rhythmus', 'modul', 'kategorie', 'person', 'objekt_id',
+    'dauerbeleg_datei_id', 'aktiv', 'einheit_id', 'kind_id', 'faellig_monat',
+  ],
+  Buchungen: ['id', 'konto', 'datum', 'betrag_ct', 'gegenseite', 'zweck', 'markierung', 'beleg_id', 'notiz', 'markiert_von', 'markiert_am'],
 }
 
 export const belegindexName = (jahr: number) => `00_Belegindex_${jahr}`

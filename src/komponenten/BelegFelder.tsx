@@ -144,6 +144,9 @@ export default function BelegFelder({ e, setE, betragText, setBetragText, zahlun
       <label className="feld"><span>Notiz</span>
         <textarea value={e.notiz} onChange={(x) => setze('notiz', x.target.value)} placeholder="Tipp: Mikrofon der Tastatur für Spracheingabe" />
       </label>
+      <label className="feld"><span>❓ Frage an den Steuerberater (leer = keine)</span>
+        <textarea value={e.frage} onChange={(x) => setze('frage', x.target.value)} placeholder="z. B. Ist das als Werbungskosten absetzbar?" rows={2} />
+      </label>
     </>
   )
 }

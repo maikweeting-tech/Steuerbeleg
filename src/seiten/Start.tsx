@@ -7,7 +7,8 @@ import { KONFIGURATIONEN, AKTUELLES_JAHR } from '../konfig'
 import { belegindexName } from '../daten/schema'
 import { aktualisiereBelege, starteSync } from '../daten/dienste'
 import { GrosseKnoepfe } from '../komponenten/Schnellerfassung'
-import { useDaten } from '../komponenten/hooks'
+import { useDaten, useStamm } from '../komponenten/hooks'
+import { vollstaendigkeit } from '../fachlich/vorlagen'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 const konfig = KONFIGURATIONEN[AKTUELLES_JAHR]
@@ -25,6 +26,9 @@ export default function Start() {
   const [link, setLink] = useState('')
   const fehlend = fehlendeKennungen()
   const { wartend, belege } = useDaten(konfig.steuerjahr)
+  const stamm = useStamm(konfig.steuerjahr)
+  const fehlen = vollstaendigkeit(stamm.vorlagen, konfig.steuerjahr, belege, new Date().toISOString().slice(0, 10)).reduce((s, v) => s + v.fehlt, 0)
+    + stamm.buchungen.filter((b) => b.markierung === 'beleg_fehlt').length
 
   // Eigener Ordner verbunden, obwohl ein anderer einen „Steuer“-Ordner freigegeben hat? → Hinweis zum Wechseln
   useEffect(() => {
@@ -85,6 +89,7 @@ export default function Start() {
       <GrosseKnoepfe />
       <div className="status-zeile">
         <Link to="/belege">{belege.length} Beleg{belege.length === 1 ? '' : 'e'} {konfig.steuerjahr}</Link>
+        {fehlen > 0 && <Link to="/check" className="fehler">{fehlen} Beleg{fehlen === 1 ? '' : 'e'} fehlen</Link>}
         {wartend.length > 0 && <span className="marke-gelb">{wartend.length} warten auf Übertragung</span>}
         {nutzer && wurzel && (
           <span className="klein">

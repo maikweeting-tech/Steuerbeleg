@@ -19,6 +19,7 @@ import { holeGeteilteDateien } from '../erfassung/teilen'
 import { nimmVorgemerkte } from '../erfassung/uebergabe'
 import { OCR_AUS, textAusBild, textAusPdf, type OcrStand } from '../erfassung/ocr'
 import { werteAus, zuordnungNachAussteller } from '../fachlich/texterkennung'
+import { vorlageMarke } from '../fachlich/vorlagen'
 import { AusstellerVorschlag, OcrVorschlaege } from '../komponenten/Vorschlaege'
 
 type Eintrag =
@@ -68,6 +69,32 @@ export default function Erfassen() {
     const d = nimmVorgemerkte()
     if (d.length) void fuegeHinzu(d)
   }, [ort.search, fuegeHinzu])
+
+  // Vorbelegung aus „Check“ (?vorlage=…) bzw. „Konto“ (?betrag=…&datum=…&aussteller=…), einmalig
+  const vorbelegt = useRef(false)
+  useEffect(() => {
+    if (vorbelegt.current) return
+    const q = new URLSearchParams(ort.search)
+    const vid = q.get('vorlage')
+    if (vid) {
+      const v = stamm.vorlagen.find((x) => x.id === vid)
+      if (!v) return // Stammdaten noch nicht geladen
+      vorbelegt.current = true
+      setE((a) => ({
+        ...a, aussteller: v.aussteller || v.bezeichnung, person: v.person, modul: v.modul, kategorie: v.kategorie,
+        objekt_id: v.objekt_id, einheit_id: v.einheit_id, kind_id: v.kind_id,
+        notiz: `${v.bezeichnung} ${vorlageMarke(v.id)}`, betrag_ct: v.betrag_ct ?? a.betrag_ct,
+      }))
+      if (v.betrag_ct !== null) setBetragText(formatEuro(v.betrag_ct).replace(/\s?€/, ''))
+    } else if (q.get('betrag')) {
+      vorbelegt.current = true
+      const c = Number(q.get('betrag'))
+      const d = q.get('datum') ?? ''
+      setE((a) => ({ ...a, betrag_ct: c, aussteller: q.get('aussteller') ?? a.aussteller, belegdatum: d || a.belegdatum, zahlungsdatum: d || a.zahlungsdatum }))
+      setBetragText(formatEuro(c).replace(/\s?€/, ''))
+      if (d) setZahlungGeaendert(true)
+    }
+  }, [ort.search, stamm.vorlagen])
 
   // Über das Teilen-Menü (Android) geschickte Dateien übernehmen
   useEffect(() => {

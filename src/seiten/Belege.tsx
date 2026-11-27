@@ -8,6 +8,7 @@ import { istAngemeldet, starteAnmeldung } from '../google/auth'
 import { formatDatum, formatEuro } from '../fachlich/format'
 import { useDaten, useStamm } from '../komponenten/hooks'
 import OrdnerWarnung from '../komponenten/OrdnerWarnung'
+import { filtereBelege, KEIN_FILTER, summe, type Filter } from '../fachlich/suche'
 
 const konfig = KONFIGURATIONEN[AKTUELLES_JAHR]
 const modulName = (id: string) => konfig.module.find((m) => m.id === id)?.name.split(' – ')[0] ?? id
@@ -37,7 +38,12 @@ export default function Belege() {
     }
   }
 
-  const sortiert = [...belege].sort((a, b) => b.belegnr - a.belegnr)
+  const [filter, setFilter] = useState<Filter>(KEIN_FILTER)
+  const setzeF = <K extends keyof Filter>(k: K, v: Filter[K]) => setFilter((f) => ({ ...f, [k]: v }))
+  const gefiltert = filtereBelege(belege, filter, (b) => `${modulName(b.modul)} ${katName(b.modul, b.kategorie)} ${objektText(b.id, b.objekt_id)} ${personName(b.person)}`)
+  const filterAktiv = JSON.stringify(filter) !== JSON.stringify(KEIN_FILTER)
+  const fragen = belege.filter((b) => b.frage.trim()).length
+  const sortiert = [...gefiltert].sort((a, b) => b.belegnr - a.belegnr)
 
   return (
     <>
@@ -83,6 +89,30 @@ export default function Belege() {
         {belege.length > 0 && <p className="klein">Mit ✎ lässt sich ein Beleg ändern (z. B. Kategorie oder Objekt). Die PDF wird dabei mit verschoben.</p>}
         {!belege.length && <p className="klein">Noch keine Belege geladen. „Übertragen / Aktualisieren“ liest den Belegindex aus Drive.</p>}
         {belege.length > 0 && (
+          <div className="filter">
+            <input type="search" aria-label="Suche" placeholder="Suchen: Aussteller, Betrag, Notiz, Nr. …" value={filter.text} onChange={(x) => setzeF('text', x.target.value)} />
+            <div className="zeile">
+              <select aria-label="Modul" value={filter.modul} onChange={(x) => setzeF('modul', x.target.value)}>
+                <option value="">alle Module</option>
+                {konfig.module.map((m) => <option key={m.id} value={m.id}>{modulName(m.id)}</option>)}
+              </select>
+              <select aria-label="Person" value={filter.person} onChange={(x) => setzeF('person', x.target.value)}>
+                <option value="">alle Personen</option>
+                {[...konfig.personen, { id: 'gemeinsam', name: 'gemeinsam' }].map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+              <select aria-label="Status" value={filter.status} onChange={(x) => setzeF('status', x.target.value)}>
+                <option value="">alle Status</option>
+                <option value="offen">offen</option><option value="unvollständig">unvollständig</option><option value="geprüft">geprüft</option>
+              </select>
+              <label className="wahl"><input type="checkbox" checked={filter.nurFragen} onChange={(x) => setzeF('nurFragen', x.target.checked)} /> nur ❓ Fragen ({fragen})</label>
+            </div>
+            {filterAktiv && (
+              <p className="klein">{gefiltert.length} von {belege.length} Belegen, Summe {formatEuro(summe(gefiltert))}{' '}
+                <button className="zweit" style={{ minHeight: 30, padding: '2px 8px' }} onClick={() => setFilter(KEIN_FILTER)}>Filter löschen</button></p>
+            )}
+          </div>
+        )}
+        {belege.length > 0 && (
           <table className="belege">
             <thead><tr><th>Nr.</th><th>Datum</th><th>Aussteller / Zuordnung</th><th className="betrag">Betrag</th></tr></thead>
             <tbody>
@@ -93,6 +123,7 @@ export default function Belege() {
                   <td>
                     {b.datei_ids ? <a href={`https://drive.google.com/file/d/${b.datei_ids.split(',')[0]}/view`} target="_blank" rel="noreferrer">{b.aussteller}</a> : b.aussteller}
                     <div className="klein">{modulName(b.modul)}{b.kategorie ? ` · ${katName(b.modul, b.kategorie)}` : ''}{objektText(b.id, b.objekt_id)}{b.kind_id ? ` · ${stamm.kinder.find((k) => k.id === b.kind_id)?.name ?? 'Kind?'}` : ''} · {personName(b.person)}{b.status !== 'offen' ? ` · ${b.status}` : ''}{stamm.pdfOffen.includes(b.id) ? ' · ⏳ PDF wird noch verschoben' : ''}</div>
+                    {b.frage.trim() && <div className="klein frage">❓ {b.frage}</div>}
                   </td>
                   <td className="betrag">{formatEuro(b.betrag_ct ?? 0)}</td>
                 </tr>

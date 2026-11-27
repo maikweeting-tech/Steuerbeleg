@@ -7,8 +7,10 @@ import { gespeicherteWurzel } from './einrichtung'
 import { belegCache, melde, warteschlange } from './speicher'
 import { findeIndex, ladeBelege, synchronisiere, type SyncDienste, type SyncErgebnis } from './sync'
 import {
-  LEER, stammAus, zeileAusArbeitstage, zeileAusEinheit, zeileAusEinnahme, zeileAusFahrt, zeileAusKind, zeileAusObjekt, type Stamm,
+  LEER, stammAus, zeileAusArbeitstage, zeileAusEinheit, zeileAusEinnahme, zeileAusFahrt, zeileAusKind, zeileAusObjekt, zeileAusVorlage, zeileAusBuchung, type Stamm,
 } from './stamm'
+import type { Vorlage } from '../fachlich/vorlagen'
+import type { Buchung, Markierung } from '../fachlich/kontoauszug'
 import { aendereBeleg, erledigeAuftraege } from './bearbeiten'
 import type { Beleg, BelegEntwurf } from '../fachlich/beleg'
 import type { Arbeitstage, Fahrt, Kind } from '../fachlich/personen'
@@ -76,7 +78,7 @@ export function automatischerSync() {
 // ---------------------------------------------------------------- Stammdaten Anlage V (online)
 
 
-const STAMM_BLAETTER = ['Objekte', 'Einheiten', 'Einnahmen', 'Aufteilung', 'Kinder', 'Fahrten', 'Arbeitstage', 'Auftraege']
+const STAMM_BLAETTER = ['Objekte', 'Einheiten', 'Einnahmen', 'Aufteilung', 'Kinder', 'Fahrten', 'Arbeitstage', 'Auftraege', 'Vorlagen', 'Buchungen']
 
 export async function ladeStamm(jahr: number): Promise<Stamm> {
   const { indexId } = await findeIndex(jahr, dienste)
@@ -186,4 +188,25 @@ export async function erledigeAuftraegeOnline(jahr: number): Promise<number> {
   const zeilen = await leseBlatt(indexId, 'Auftraege').catch(() => [])
   if (!zeilen.some((z) => z[0] && !z[8])) return 0
   return erledigeAuftraege({ indexId, ordnerId, jetzt: () => new Date().toISOString(), leseBlatt: async () => zeilen, ersetzeZeile, holeOderErstellePfad, verschiebeDatei })
+}
+
+// ---------------------------------------------------------------- ab M6
+
+export async function speichereVorlage(jahr: number, v: Vorlage, loeschen = false) {
+  const { indexId } = await findeIndex(jahr, dienste)
+  if (loeschen) await ersetzeZeile(indexId, 'Vorlagen', v.id, null)
+  else if (!(await ersetzeZeile(indexId, 'Vorlagen', v.id, zeileAusVorlage(v)))) await haengeAn(indexId, 'Vorlagen', [zeileAusVorlage(v)])
+  await protokoll(indexId, loeschen ? 'vorlage gelöscht' : 'vorlage gespeichert', v.id, v.bezeichnung)
+  return ladeStamm(jahr)
+}
+
+/** E7: Buchung markieren (gespeichert wird nur diese eine Buchung, nicht der ganze Kontoauszug). */
+export async function markiereBuchung(jahr: number, b: Buchung, m: Markierung | null, beleg_id = '', notiz = '') {
+  const { indexId } = await findeIndex(jahr, dienste)
+  if (m === null) await ersetzeZeile(indexId, 'Buchungen', b.id, null)
+  else {
+    const z = zeileAusBuchung(b, m, beleg_id, notiz, nutzerEmail(), new Date().toISOString())
+    if (!(await ersetzeZeile(indexId, 'Buchungen', b.id, z))) await haengeAn(indexId, 'Buchungen', [z])
+  }
+  return ladeStamm(jahr)
 }
