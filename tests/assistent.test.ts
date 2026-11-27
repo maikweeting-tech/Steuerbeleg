@@ -1,6 +1,6 @@
 // S1: Erklärungs-Assistent – Bedingungen, Fortschritt, Unterlagen, Klärungspunkte, Speicherformat
 import { describe, expect, it } from 'vitest'
-import { bereiche, fortschritt, gesamtFortschritt, klaeren, naechsteOffene, passtWert, sichtbar, unterlagen, WEISS_NICHT, type Antworten } from '../src/fachlich/assistent'
+import { bereiche, fortschritt, geburtsjahr, hinweisText, gesamtFortschritt, klaeren, naechsteOffene, passtWert, sichtbar, unterlagen, WEISS_NICHT, type Antworten } from '../src/fachlich/assistent'
 import { antwortenAus, stammAus, zeileAusAntwort } from '../src/daten/stamm'
 
 const L = bereiche(2024)
@@ -43,5 +43,46 @@ describe('Erklärungs-Assistent', () => {
     const z = zeileAusAntwort('haupt_adresse', 'ja', 'Umzug im Mai', 'm', 't')
     expect(antwortenAus([z])).toEqual({ haupt_adresse: { wert: 'ja', notiz: 'Umzug im Mai' } })
     expect(stammAus({ Erklaerung: [z] }).antworten.haupt_adresse.wert).toBe('ja')
+  })
+
+  it('S2: Kinderfragen je Kind, abhängig vom Alter (Testdaten, keine echten Personen)', () => {
+    const w = (wert: string) => ({ wert, notiz: '' })
+    const kinderFragen = (a: Antworten) => bereiche(2024, a).find((b) => b.id === 'kinder')!.fragen.filter((f) => sichtbar(f, a)).map((f) => f.id)
+    expect(kinderFragen({})).toEqual(['kinder_anzahl'])
+    const a: Antworten = {
+      kinder_anzahl: w('3'),
+      kind1_name: w('Testkind'), kind1_geburt: w('1999-06-01'), // 25 in 2024
+      kind2_geburt: w('2005-03-01'), // 19
+      kind3_geburt: w('2015-03-01'), // 9
+    }
+    const ids = kinderFragen(a)
+    expect(ids.filter((x) => x.startsWith('kind1_'))).toContain('kind1_ausbildung')
+    expect(ids).toContain('kind2_ausbildung')
+    expect(ids).not.toContain('kind2_betreuung')
+    expect(ids).toContain('kind3_betreuung')
+    expect(ids).not.toContain('kind3_ausbildung')
+    expect(ids).not.toContain('kind2_erstausbildung') // erst nach „ja“ bei Ausbildung
+    expect(kinderFragen({ ...a, kind2_ausbildung: w('ja') })).toContain('kind2_erstausbildung')
+    // Vorname im Fragetext, Hinweis „25“ nur beim ältesten Kind
+    const k = bereiche(2024, a).find((b) => b.id === 'kinder')!
+    expect(k.fragen.find((f) => f.id === 'kind1_haushalt')!.frage).toContain('Kind 1 (Testkind)')
+    expect(hinweisText(k.fragen.find((f) => f.id === 'kind1_geburt')!, a)).toContain('25')
+    expect(hinweisText(k.fragen.find((f) => f.id === 'kind2_geburt')!, a)).toBe('')
+    expect(klaeren(bereiche(2024, a), a).map((x) => x.frage)).toEqual(['kind1_geburt'])
+    expect(geburtsjahr('2018-01-19')).toBe(2018)
+    expect(geburtsjahr('19.01.2018')).toBeNull()
+  })
+  it('S2: Lohn, Rente, KAP – Folgefragen und Klärungspunkte', () => {
+    const w = (wert: string) => ({ wert, notiz: '' })
+    const L2 = (a: Antworten) => bereiche(2024, a)
+    const sicht = (id: string, a: Antworten) => L2(a).find((b) => b.id === id)!.fragen.filter((f) => sichtbar(f, a)).map((f) => f.id)
+    expect(sicht('lohn', {})).toEqual(['n_lohn'])
+    expect(sicht('lohn', { n_lohn: w('ja') })).toContain('n_km')
+    expect(sicht('rente', { r_rente: w('ja') })).not.toContain('r_befristet')
+    const a: Antworten = { r_rente: w('ja'), r_art: w('em'), r_befristet: w(WEISS_NICHT), kap_ertraege: w('ja'), kap_freistellung: w('nein'), n_lohn: w('ja') }
+    expect(sicht('rente', a)).toContain('r_befristet')
+    expect(klaeren(L2(a), a).map((x) => x.frage)).toEqual(['r_befristet', 'kap_freistellung'])
+    expect(unterlagen(L2(a), a).map((u) => u.frage)).toEqual(['n_lohn', 'r_rente', 'kap_ertraege'])
+    expect(L2(a).filter((b) => b.folgt).map((b) => b.id)).toEqual(['vermietung', 'ausgaben'])
   })
 })
