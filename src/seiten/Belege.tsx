@@ -37,7 +37,9 @@ export default function Belege() {
 
   return (
     <>
-      {meldung && <p className="ok">{meldung}</p>}
+      {meldung && (wartend.length
+        ? <p className="ok">{meldung}</p>
+        : <p className="ok">✓ Beleg gespeichert und nach Drive übertragen.</p>)}
       {!angemeldet && (
         <p className="warnung">
           Nicht angemeldet. Erfassen geht trotzdem, übertragen wird nach der Anmeldung.{' '}
