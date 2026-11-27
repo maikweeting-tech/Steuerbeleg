@@ -8,6 +8,7 @@ import {
 } from './auswertung'
 export { mappenReihenfolge }
 import type { Beleg } from '../fachlich/beleg'
+import { anzeigeWert, bereiche, gesamtFortschritt, klaeren, kontextAus, sichtbar, unterlagen } from '../fachlich/assistent'
 
 const A4: [number, number] = [595.28, 841.89]
 const RAND = 50
@@ -185,6 +186,42 @@ export async function fragenPdf(d: ExportDaten): Promise<Blob> {
     fr.map((b) => [String(b.belegnr), formatDatum(b.belegdatum), b.aussteller, `${modulName(d.konfig, b.modul)} / ${katName(d.konfig, b.modul, b.kategorie)}`, formatEuro(b.betrag_ct ?? 0), b.frage]),
     [30, 55, 85, 100, 60, 165], [0, 4])
   s.text('Antworten bitte direkt hier notieren oder per Mail zurück.', { size: 9, farbe: [0.4, 0.4, 0.4] })
+  return alsBlob(doc)
+}
+
+// ------------------------------------------------------------------ Ausfüllhilfe (Assistent)
+
+/** Antworten aus dem Assistenten, Unterlagenliste und Klärungspunkte für die Steuerberatung. */
+export async function erklaerungPdf(d: ExportDaten): Promise<Blob> {
+  const doc = await neuesDoc(`Ausfüllhilfe Steuer ${d.jahr}`)
+  const s = await new Satz(doc, `Steuerbeleg · Ausfüllhilfe ${d.jahr} · erstellt ${erstelltAm(d)}`).init()
+  const a = d.stamm.antworten
+  const liste = bereiche(d.jahr, a, kontextAus(d.jahr, d.stamm.objekte, d.stamm.einnahmen, d.belege)).filter((b) => !b.folgt)
+  const g = gesamtFortschritt(liste, a)
+  s.text(`Ausfüllhilfe Steuererklärung ${d.jahr}`, { size: 18, fett: true, abstand: 4 })
+  s.text(`Vorbereitung für die Steuerberatung. ${g.fertig} von ${g.gesamt} Fragen beantwortet${g.unklar ? `, ${g.unklar} „weiß nicht“` : ''}. Summen und Belege: siehe Checkliste und Belegmappe.`)
+  s.text(`${HINWEIS} Formulare/Zeilen sind nur Hinweise (prüfen). Es wird keine Steuer berechnet.`, { size: 9, farbe: [0.6, 0, 0], abstand: 8 })
+
+  const kl = klaeren(liste, a)
+  s.ueberschrift(`Mit der Steuerberatung klären (${kl.length})`)
+  if (!kl.length) s.text('Keine Punkte.')
+  for (const k of kl) s.text(`[ ] ${k.bereich}: ${k.text}`)
+
+  const un = unterlagen(liste, a)
+  s.ueberschrift(`Unterlagen für die Steuerberatung (${un.length})`)
+  if (!un.length) s.text('Keine Unterlagen aus den Antworten.')
+  for (const u of un) s.text(`[ ] ${u.name} (${u.bereich})`)
+
+  for (const b of liste) {
+    const fr = b.fragen.filter((f) => sichtbar(f, a))
+    if (!fr.length) continue
+    s.ueberschrift(b.name)
+    s.tabelle(['Frage', 'Antwort', 'Notiz / Info', 'Formular (prüfen)'],
+      fr.map((f) => {
+        const x = a[f.id]
+        return [f.frage, x?.wert ? anzeigeWert(f, x.wert) : 'offen', [x?.notiz, f.info].filter(Boolean).join(' · '), f.formular]
+      }), [200, 75, 130, 90])
+  }
   return alsBlob(doc)
 }
 

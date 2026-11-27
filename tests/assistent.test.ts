@@ -1,6 +1,6 @@
 // S1: Erklärungs-Assistent – Bedingungen, Fortschritt, Unterlagen, Klärungspunkte, Speicherformat
 import { describe, expect, it } from 'vitest'
-import { bereiche, einnahmenJeObjekt, fortschritt, geburtsjahr, hinweisText, gesamtFortschritt, klaeren, naechsteOffene, passtWert, sichtbar, unterlagen, WEISS_NICHT, type Antworten } from '../src/fachlich/assistent'
+import { belegKontext, bereiche, einnahmenJeObjekt, fortschritt, geburtsjahr, hinweisText, gesamtFortschritt, klaeren, naechsteOffene, passtWert, sichtbar, unterlagen, WEISS_NICHT, type Antworten } from '../src/fachlich/assistent'
 import { antwortenAus, stammAus, zeileAusAntwort } from '../src/daten/stamm'
 
 const L = bereiche(2024)
@@ -83,7 +83,7 @@ describe('Erklärungs-Assistent', () => {
     expect(sicht('rente', a)).toContain('r_befristet')
     expect(klaeren(L2(a), a).map((x) => x.frage)).toEqual(['r_befristet', 'kap_freistellung'])
     expect(unterlagen(L2(a), a).map((u) => u.frage)).toEqual(['n_lohn', 'r_rente', 'kap_ertraege'])
-    expect(L2(a).filter((b) => b.folgt).map((b) => b.id)).toEqual(['ausgaben'])
+    expect(L2(a).filter((b) => b.folgt)).toEqual([])
   })
 
   it('S3: Vermietung je Objekt aus der App, Ausland nur Klärung, Einnahmen als Vorschlag (Testdaten)', () => {
@@ -116,5 +116,27 @@ describe('Erklärungs-Assistent', () => {
     // Ids eindeutig auch mit Kindern und Objekten
     const voll = bereiche(2024, { ...a, kinder_anzahl: w('6') }, kx).flatMap((b) => b.fragen.map((f) => f.id))
     expect(new Set(voll).size).toBe(voll.length)
+  })
+
+  it('S4: Vorsorge, agB, § 35a mit Belegsummen und Barzahlungshinweis (Testdaten)', () => {
+    const w = (wert: string) => ({ wert, notiz: '' })
+    const kb = belegKontext([
+      { modul: '35A', kategorie: 'handwerker', betrag_ct: 30000, zahlungsart: 'unbar' },
+      { modul: '35A', kategorie: 'handwerker', betrag_ct: 12345, zahlungsart: 'bar' },
+      { modul: 'AGB', kategorie: 'krankheitskosten', betrag_ct: 9990 },
+      { modul: 'SA', kategorie: 'spenden', betrag_ct: null },
+    ])
+    expect(kb.bar35a).toBe(1)
+    expect(kb.belegSummen!['35A|handwerker']).toEqual({ anzahl: 2, summe_ct: 42345 })
+    const L4 = (a: Antworten) => bereiche(2024, a, { objekte: [], einnahmenCt: {}, ...kb })
+    const f = (id: string) => L4({}).flatMap((b) => b.fragen).find((x) => x.id === id)!
+    expect(f('h35_handwerker').info).toBe('In der App erfasst: 2 Beleg(e), zusammen 423,45 € (prüfen).')
+    expect(f('agb_krankheit').info).toContain('99,90')
+    expect(f('sa_spenden').info).toContain('0,00')
+    expect(f('agb_pflege').info).toBeUndefined()
+    const a: Antworten = { h35_handwerker: w('ja'), sa_unterhalt: w('ja'), agb_krankheit: w('ja') }
+    expect(klaeren(L4(a), a).map((x) => x.frage)).toEqual(['sa_unterhalt', 'h35_handwerker'])
+    expect(unterlagen(L4(a), a).map((u) => u.frage)).toEqual(['sa_unterhalt', 'agb_krankheit', 'h35_handwerker'])
+    expect(L4({}).map((b) => b.id)).toEqual(['allgemein', 'haupt', 'kinder', 'lohn', 'rente', 'kap', 'vermietung', 'vorsorge', 'agb', 'haushalt'])
   })
 })

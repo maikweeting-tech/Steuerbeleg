@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react'
 import { AKTUELLES_JAHR } from '../konfig'
 import { speichereAntwort } from '../daten/dienste'
-import { useStamm } from '../komponenten/hooks'
+import { useDaten, useStamm } from '../komponenten/hooks'
+import { Link } from 'react-router-dom'
 import { istAngemeldet } from '../google/auth'
 import {
-  anzeigeWert, bereiche, einnahmenJeObjekt, fortschritt, gesamtFortschritt, hinweisText, klaeren, naechsteOffene, sichtbar, unterlagen, WEISS_NICHT,
+  anzeigeWert, bereiche, kontextAus, fortschritt, gesamtFortschritt, hinweisText, klaeren, naechsteOffene, sichtbar, unterlagen, WEISS_NICHT,
   type Antwort, type Frage,
 } from '../fachlich/assistent'
 
@@ -39,6 +40,7 @@ function FrageKarte({ f, a, hinweis, aktiv, online, speichere }: { f: Frage; a?:
           <button className="zweit" style={{ minHeight: 28, padding: '1px 8px' }} disabled={!online} onClick={() => void speichere(f.vorschlag!, notiz)}>übernehmen</button>
         </p>
       )}
+      {f.info && <p className="klein">{f.info}</p>}
       {hinweis && <p className="warnung klein">{hinweis}</p>}
       {f.unterlage && wert === 'ja' && <p className="klein">📄 Unterlage für die Steuerberatung: <strong>{f.unterlage.name}</strong></p>}
       <label className="feld" style={{ marginTop: 6 }}><span className="klein">Notiz (optional)</span>
@@ -51,13 +53,10 @@ function FrageKarte({ f, a, hinweis, aktiv, online, speichere }: { f: Frage; a?:
 
 export default function Erklaerung() {
   const stamm = useStamm(AKTUELLES_JAHR)
+  const { belege } = useDaten(AKTUELLES_JAHR)
   const online = istAngemeldet()
   const a = stamm.antworten
-  const kontext = {
-    objekte: stamm.objekte.filter((o) => o.aktiv),
-    einnahmenCt: einnahmenJeObjekt(AKTUELLES_JAHR, stamm.einnahmen),
-  }
-  const liste = bereiche(AKTUELLES_JAHR, a, kontext)
+  const liste = bereiche(AKTUELLES_JAHR, a, kontextAus(AKTUELLES_JAHR, stamm.objekte, stamm.einnahmen, belege))
   const [offenId, setOffenId] = useState<string | null>(null)
   const offen = liste.find((b) => b.id === offenId) ?? null
   const [laeuft, setLaeuft] = useState(false)
@@ -96,6 +95,7 @@ export default function Erklaerung() {
       <div className="karte">
         <p className="klein">Der Assistent fragt Bereich für Bereich ab, was die Steuerberatung braucht. Er rechnet keine Steuer aus und übermittelt nichts. Formulare und Zeilen sind nur Hinweise (prüfen).</p>
         <p><strong>{g.fertig} von {g.gesamt}</strong> Fragen beantwortet{g.unklar ? `, ${g.unklar} „weiß nicht“` : ''}.</p>
+        <p className="klein">Fertig? Unter <Link to="/export">Export</Link> die „Ausfüllhilfe für die Steuerberatung (PDF)“ erstellen.</p>
       </div>
       {liste.map((b) => {
         const p = fortschritt(b, a)
