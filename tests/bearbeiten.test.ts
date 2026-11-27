@@ -80,7 +80,7 @@ describe('Beleg bearbeiten (E14)', () => {
 
   it('Fremde PDF: Änderung gespeichert, Verschiebe-Auftrag für den Eigentümer', async () => {
     const f = fake()
-    f.d.verschiebeDatei = async (id, _n) => ({ id, name: alt.dateiname, offen: true })
+    f.d.verschiebeDatei = async (id) => ({ id, name: alt.dateiname, offen: true })
     const b = await aendereBeleg(alt, { ...entwurfAus(alt, []), modul: 'AGB', kategorie: 'krankheitskosten' }, f.d) as Beleg & { pdfOffen?: boolean }
     expect(b.pdfOffen).toBe(true)
     expect(f.blaetter.Belege[0][BLAETTER.Belege.indexOf('modul')]).toBe('AGB')
