@@ -1,5 +1,6 @@
 // Google Drive: Ordner suchen und anlegen. Die App arbeitet ausschließlich im Ordner "Steuer".
 import { googleFetch } from './api'
+import { holeToken } from './auth'
 
 const DRIVE = 'https://www.googleapis.com/drive/v3/files'
 export const ORDNER_MIME = 'application/vnd.google-apps.folder'
@@ -72,3 +73,42 @@ export async function datei(id: string): Promise<DriveDatei> {
   return googleFetch(`${DRIVE}/${encodeURIComponent(id)}?fields=${FELDER}&supportsAllDrives=true`)
 }
 
+
+const UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files'
+
+/** Lädt eine Datei hoch (multipart). appProperties dienen zum Wiederfinden (z. B. Beleg-Id). */
+export async function ladeHoch(name: string, mimeType: string, inhalt: Blob, elternId: string, appProperties?: Record<string, string>): Promise<DriveDatei> {
+  const meta = new Blob([JSON.stringify({ name, mimeType, parents: [elternId], appProperties })], { type: 'application/json' })
+  const form = new FormData()
+  form.append('metadata', meta)
+  form.append('file', inhalt)
+  const t = await holeToken()
+  const r = await fetch(`${UPLOAD}?uploadType=multipart&supportsAllDrives=true&fields=${FELDER}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${t}` },
+    body: form,
+  })
+  if (!r.ok) {
+    let text = ''
+    try { text = (await r.json())?.error?.message ?? '' } catch { /* kein JSON */ }
+    throw new Error(`Upload fehlgeschlagen (${r.status}): ${text || r.statusText}`)
+  }
+  return r.json()
+}
+
+/** Datei eines Belegs (über appProperties), falls schon hochgeladen – verhindert Doppel-Uploads. */
+export async function findeBelegDatei(belegId: string): Promise<DriveDatei | null> {
+  return (await suche(`appProperties has { key='steuerbeleg_beleg' and value='${esc(belegId)}' } and trashed = false`))[0] ?? null
+}
+
+/** Legt einen Ordnerpfad unterhalb von elternId an bzw. findet ihn. */
+export async function holeOderErstellePfad(pfad: string[], elternId: string): Promise<DriveDatei> {
+  let aktuell: DriveDatei | null = null
+  let id = elternId
+  for (const teil of pfad) {
+    aktuell = await holeOderErstelleOrdner(teil, id)
+    id = aktuell.id
+  }
+  if (!aktuell) throw new Error('Leerer Ordnerpfad')
+  return aktuell
+}

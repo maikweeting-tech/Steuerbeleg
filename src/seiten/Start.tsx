@@ -5,6 +5,7 @@ import { richteEin, sucheWurzel, speichereWurzel, type Ergebnis } from '../daten
 import { kinder, type DriveDatei } from '../google/drive'
 import { KONFIGURATIONEN, AKTUELLES_JAHR } from '../konfig'
 import { belegindexName } from '../daten/schema'
+import { starteSync } from '../daten/dienste'
 
 const konfig = KONFIGURATIONEN[AKTUELLES_JAHR]
 
@@ -31,6 +32,7 @@ export default function Start() {
     const r = await sucheWurzel()
     setWurzel(r.wurzel)
     setKandidaten(r.kandidaten)
+    void starteSync()
   }, [])
 
   useEffect(() => {
@@ -38,8 +40,7 @@ export default function Start() {
     const f = letzterAnmeldeFehler()
     if (f && f !== 'stumm') setFehler(f)
     if (istAngemeldet()) aufgabe('Anmeldung …', nachAnmeldung)
-    // Nach erneutem Öffnen still neu anmelden, falls schon einmal angemeldet (einmal je Tab)
-    else if (stilleAnmeldungMoeglich()) { setLaeuft('Anmeldung …'); starteAnmeldung(true) }
+    else if (stilleAnmeldungMoeglich()) setLaeuft('Anmeldung …') // Weiterleitung startet in App.tsx
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (fehlend.length)

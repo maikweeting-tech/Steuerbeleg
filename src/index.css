@@ -28,3 +28,31 @@ input { font: inherit; padding: 9px 10px; border: 1px solid #bbb; border-radius:
 .hinweis { border-left: 4px solid var(--blau); background: #eef4f9; padding: 8px 12px; font-size: 0.92rem; }
 ul.liste { margin: 6px 0; padding-left: 20px; }
 footer { max-width: 760px; margin: 0 auto; padding: 8px 16px 24px; }
+nav.haupt { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+nav.haupt a.aktiv { font-weight: 700; }
+.marke { background: #fff; color: var(--blau); border-radius: 10px; padding: 1px 8px; font-size: 0.8rem; font-weight: 700; }
+label.feld { display: block; margin: 0 0 10px; }
+label.feld > span { display: block; font-size: 0.9rem; color: #333; margin-bottom: 3px; }
+select, textarea { font: inherit; padding: 9px 10px; border: 1px solid #bbb; border-radius: 6px; min-height: 44px; width: 100%; max-width: 360px; background: #fff; }
+textarea { min-height: 70px; max-width: 100%; }
+.seiten { display: flex; flex-wrap: wrap; gap: 10px; }
+.seite { background: #fff; border: 1px solid #ccc; border-radius: 6px; padding: 6px; width: 150px; }
+.seite img { width: 100%; height: 170px; object-fit: contain; background: #eee; display: block; }
+.seite .zeile button { padding: 4px 8px; min-height: 36px; font-size: 0.85rem; }
+.seite select { min-height: 36px; padding: 4px; font-size: 0.85rem; margin-top: 4px; }
+.zuschnitt { position: relative; overflow: hidden; touch-action: none; user-select: none; max-width: 100%; display: inline-block; }
+.zuschnitt img { display: block; max-width: 100%; max-height: 65vh; }
+.rahmen { position: absolute; border: 2px solid #ffb300; box-shadow: 0 0 0 9999px rgba(0,0,0,0.45); pointer-events: none; }
+.griff { position: absolute; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%; background: #ffb300; border: 3px solid #fff; touch-action: none; cursor: grab; }
+.warnung { border-left: 4px solid #e0a000; background: #fff7e0; padding: 8px 12px; margin: 8px 0; }
+.wartend { border-left: 4px solid #e0a000; }
+table.belege { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+table.belege td, table.belege th { padding: 6px 4px; border-bottom: 1px solid #ddd; text-align: left; vertical-align: top; }
+table.belege td.betrag { text-align: right; white-space: nowrap; }
+.feld-fehler { border-color: var(--rot); }
+label.knopf > span { display: inline-flex; align-items: center; padding: 10px 16px; border-radius: 6px; border: 1px solid var(--blau); background: var(--blau); color: #fff; cursor: pointer; min-height: 44px; }
+label.knopf.zweit > span { background: #fff; color: var(--blau); }
+label.wahl { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; }
+label.wahl input { width: auto; min-height: 0; }
+.pdf-platz { height: 170px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #eee; font-weight: 700; text-align: center; overflow: hidden; }
+header { flex-wrap: wrap; }
