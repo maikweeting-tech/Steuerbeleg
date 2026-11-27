@@ -14,6 +14,7 @@ import { automatischerSync } from './daten/dienste'
 import { useDaten } from './komponenten/hooks'
 import { AKTUELLES_JAHR } from './konfig'
 import { KameraKnopf } from './komponenten/Schnellerfassung'
+import UpdateHinweis from './komponenten/UpdateHinweis'
 
 function Kamera() {
   const p = useLocation().pathname
@@ -49,6 +50,7 @@ export default function App() {
         <Navigation />
       </header>
       <main>
+        <UpdateHinweis />
         <Routes>
           <Route path="/" element={<Start />} />
           <Route path="/erfassen" element={<Erfassen />} />
