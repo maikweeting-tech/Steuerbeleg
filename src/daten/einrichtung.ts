@@ -26,6 +26,24 @@ export interface Suchergebnis {
   kandidaten: DriveDatei[]
 }
 
+/** Ordner-Id aus einem Drive-Link (…/folders/<id>, …?id=<id>) oder einer reinen Id; sonst null. */
+export function ordnerIdAusLink(text: string): string | null {
+  const t = text.trim()
+  const m = t.match(/\/folders\/([-\w]{10,})/) ?? t.match(/[?&]id=([-\w]{10,})/) ?? t.match(/^([-\w]{10,})$/)
+  return m ? m[1] : null
+}
+
+/** Verbindet einen Ordner per Link (z. B. aus der Freigabe-Mail). */
+export async function verbindeOrdnerPerLink(text: string): Promise<DriveDatei> {
+  const id = ordnerIdAusLink(text)
+  if (!id) throw new Error('Das ist kein Link zu einem Drive-Ordner. Bitte den Link aus Google Drive kopieren (Ordner → Teilen → Link kopieren).')
+  let d: DriveDatei
+  try { d = await datei(id) } catch { throw new Error('Ordner nicht erreichbar. Ist er für dich freigegeben (Bearbeiter)?') }
+  if (d.mimeType !== 'application/vnd.google-apps.folder') throw new Error(`„${d.name}“ ist kein Ordner.`)
+  speichereWurzel(d.id)
+  return d
+}
+
 /** Sucht den Ordner "Steuer": zuerst gespeicherte Id, sonst alle Kandidaten. */
 export async function sucheWurzel(): Promise<Suchergebnis> {
   const id = gespeicherteWurzel()

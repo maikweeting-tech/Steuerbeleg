@@ -41,7 +41,7 @@ interface Jahr { indexId: string; ordnerId: string; belege: Beleg[]; objekte: Ob
 /** Ordner und Belegindex eines Jahres finden (Fehler mit Hinweis, wenn sie fehlen). */
 export async function findeIndex(jahr: number, d: SyncDienste): Promise<{ indexId: string; ordnerId: string }> {
   const wurzel = d.wurzelId()
-  if (!wurzel) throw new SyncFehler('Kein Ordner „Steuer“ verbunden. Bitte auf der Startseite verbinden.')
+  if (!wurzel) throw new SyncFehler('Kein Ordner „Steuer“ verbunden. Bitte auf „Start“ unter „2. Ordner Steuer“ den gemeinsamen Ordner verbinden.')
   const ordner = await d.findeOrdner(String(jahr), wurzel)
   if (!ordner) throw new SyncFehler(`Ordner „Steuer/${jahr}“ fehlt. Bitte auf der Startseite „Struktur prüfen“.`)
   const index = await d.findeSheet(belegindexName(jahr), ordner.id)
