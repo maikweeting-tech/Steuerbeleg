@@ -15,6 +15,7 @@ import { istAngemeldet } from '../google/auth'
 import StichwortPflege from '../komponenten/StichwortPflege'
 import Info from '../komponenten/Info'
 import VorjahrKarte from '../komponenten/VorjahrKarte'
+import HandyErinnerung from '../komponenten/HandyErinnerung'
 
 const konfig = KONFIGURATIONEN[AKTUELLES_JAHR]
 const heute = () => new Date().toISOString().slice(0, 10)
@@ -106,6 +107,7 @@ export default function Check() {
         speichern={(v, loeschen) => void aufgabe(() => speichereVorlage(AKTUELLES_JAHR, v, loeschen), loeschen ? 'Vorlage gelöscht.' : 'Vorlage gespeichert.')} />
 
       <StichwortPflege eigene={stamm.stichwoerter ?? []} />
+      <HandyErinnerung />
       <Erinnerung />
 
       {laeuft && <p className="klein">Speichere …</p>}
