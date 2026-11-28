@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import type { BelegEntwurf } from '../fachlich/beleg'
 import type { Anteil } from '../fachlich/objekte'
 import type { Stamm } from '../daten/stamm'
+import Info from './Info'
 
 interface Props {
   e: BelegEntwurf
@@ -35,14 +36,14 @@ export default function ObjektZuordnung({ e, setE, stamm }: Props) {
     <div className="feld">
       {!aufgeteilt && (
         <>
-          <label className="feld"><span>Objekt *</span>
+          <label className="feld"><span>Objekt *<Info zu="Objekt *" /></span>
             <select value={e.objekt_id} onChange={(x) => setE((a) => ({ ...a, objekt_id: x.target.value, einheit_id: '' }))}>
               <option value="">– wählen –</option>
               {objekte.map((o) => <option key={o.id} value={o.id}>{o.bezeichnung}</option>)}
             </select>
           </label>
           {e.objekt_id && einheitenVon(e.objekt_id).length > 0 && (
-            <label className="feld"><span>Einheit (optional, leer = ganzes Objekt)</span>
+            <label className="feld"><span>Einheit (optional, leer = ganzes Objekt)<Info zu="Einheit (optional, leer = ganzes Objekt)" /></span>
               <select value={e.einheit_id} onChange={(x) => setE((a) => ({ ...a, einheit_id: x.target.value }))}>
                 <option value="">– ganzes Objekt –</option>
                 {einheitenVon(e.objekt_id).map((u) => <option key={u.id} value={u.id}>{u.bezeichnung}</option>)}
@@ -53,7 +54,7 @@ export default function ObjektZuordnung({ e, setE, stamm }: Props) {
       )}
 
       <label className="wahl" style={{ display: 'block' }}>
-        <input type="checkbox" checked={aufgeteilt} onChange={(x) => umschalten(x.target.checked)} /> Auf mehrere Objekte/Einheiten aufteilen
+        <input type="checkbox" checked={aufgeteilt} onChange={(x) => umschalten(x.target.checked)} /> Auf mehrere Objekte/Einheiten aufteilen<Info text="Wenn eine Rechnung mehrere Objekte oder Wohnungen betrifft (z. B. eine Versicherung für zwei Häuser): anhaken und die Prozentanteile eintragen. Zusammen müssen es 100 % sein." />
       </label>
 
       {aufgeteilt && (
@@ -87,7 +88,7 @@ export default function ObjektZuordnung({ e, setE, stamm }: Props) {
       )}
 
       <label className="wahl" style={{ display: 'block' }}>
-        <input type="checkbox" checked={e.umlagefaehig} onChange={(x) => setE((a) => ({ ...a, umlagefaehig: x.target.checked }))} /> Umlagefähig (Nebenkosten auf Mieter, bitte selbst prüfen)
+        <input type="checkbox" checked={e.umlagefaehig} onChange={(x) => setE((a) => ({ ...a, umlagefaehig: x.target.checked }))} /> Umlagefähig (Nebenkosten auf Mieter, bitte selbst prüfen)<Info text="Anhaken, wenn die Kosten über die Nebenkostenabrechnung an die Mieter weitergegeben werden (z. B. Müllabfuhr, Grundsteuer, Gebäudeversicherung). Laut Mietvertrag und Betriebskostenverordnung prüfen." />
       </label>
     </div>
   )

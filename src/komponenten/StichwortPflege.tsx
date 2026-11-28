@@ -4,6 +4,7 @@ import { AKTUELLES_JAHR, KONFIGURATIONEN } from '../konfig'
 import { speichereStichwort } from '../daten/dienste'
 import { STANDARD_STICHWOERTER, type Stichwort } from '../fachlich/zuordnung'
 import { istAngemeldet } from '../google/auth'
+import Info from './Info'
 
 const konfig = KONFIGURATIONEN[AKTUELLES_JAHR]
 const name = (s: Stichwort) => {
@@ -32,12 +33,12 @@ export default function StichwortPflege({ eigene }: { eigene: Stichwort[] }) {
         ))}</ul>
       ) : <p className="klein">Noch keine eigenen Stichwörter.</p>}
       <div className="zeile">
-        <label className="feld"><span>Stichwort (z. B. Name der Praxis)</span><input value={neu.stichwort} onChange={(x) => setNeu({ ...neu, stichwort: x.target.value })} /></label>
-        <label className="feld"><span>Bereich</span>
+        <label className="feld"><span>Stichwort (z. B. Name der Praxis)<Info zu="Stichwort (z. B. Name der Praxis)" /></span><input value={neu.stichwort} onChange={(x) => setNeu({ ...neu, stichwort: x.target.value })} /></label>
+        <label className="feld"><span>Bereich<Info zu="Bereich" /></span>
           <select value={neu.modul} onChange={(x) => setNeu({ ...neu, modul: x.target.value, kategorie: '' })}>
             <option value="">–</option>{konfig.module.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
           </select></label>
-        <label className="feld"><span>Kategorie</span>
+        <label className="feld"><span>Kategorie<Info zu="Kategorie" /></span>
           <select value={neu.kategorie} onChange={(x) => setNeu({ ...neu, kategorie: x.target.value })} disabled={!modul?.kategorien.length}>
             <option value="">–</option>{modul?.kategorien.map((k) => <option key={k.schluessel} value={k.schluessel}>{k.name}</option>)}
           </select></label>

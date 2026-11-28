@@ -11,6 +11,7 @@ import {
 import { formatDatum, formatEuro, parseBetrag, parseDatum } from '../fachlich/format'
 import { istAngemeldet } from '../google/auth'
 import ObjektDokumente from '../komponenten/ObjektDokumente'
+import Info from '../komponenten/Info'
 
 const konfig = KONFIGURATIONEN[AKTUELLES_JAHR]
 const vModul = konfig.module.find((m) => m.ebene === 'objekt')
@@ -135,20 +136,20 @@ function Grunddaten({ objekt, online, laeuft, speichern }: { objekt: Objekt; onl
   return (
     <div className="karte">
       <h2>Grunddaten</h2>
-      <label className="feld"><span>Adresse</span><input value={f.adresse} onChange={s('adresse')} /></label>
-      <label className="feld"><span>Wohnfläche gesamt (m²)</span><input inputMode="decimal" value={f.flaeche} onChange={s('flaeche')} /></label>
-      <label className="feld"><span>Umlageschlüssel</span>
+      <label className="feld"><span>Adresse<Info zu="Adresse" /></span><input value={f.adresse} onChange={s('adresse')} /></label>
+      <label className="feld"><span>Wohnfläche gesamt (m²)<Info zu="Wohnfläche gesamt (m²)" /></span><input inputMode="decimal" value={f.flaeche} onChange={s('flaeche')} /></label>
+      <label className="feld"><span>Umlageschlüssel<Info zu="Umlageschlüssel" /></span>
         <select value={f.schluessel} onChange={s('schluessel')}>
           {(Object.keys(SCHLUESSEL_NAMEN) as Umlageschluessel[]).map((k) => <option key={k} value={k}>{SCHLUESSEL_NAMEN[k]}</option>)}
         </select>
       </label>
       <fieldset style={{ border: '1px solid #ddd', borderRadius: 6, padding: 8 }}>
         <legend className="klein">AfA-Grunddaten (nur zur Information, es wird keine AfA berechnet)</legend>
-        <label className="feld"><span>Anschaffungsdatum (TT.MM.JJJJ)</span><input value={f.anschaffungsdatum} onChange={s('anschaffungsdatum')} /></label>
-        <label className="feld"><span>Anschaffungskosten gesamt (€)</span><input inputMode="decimal" value={f.kosten} onChange={s('kosten')} /></label>
-        <label className="feld"><span>Gebäudeanteil (%) – ohne Grund und Boden</span><input inputMode="decimal" value={f.anteil} onChange={s('anteil')} /></label>
-        <label className="feld"><span>Baujahr</span><input inputMode="numeric" value={f.baujahr} onChange={s('baujahr')} /></label>
-        <label className="feld"><span>AfA-Satz laut Steuerberater/Bescheid (Text, prüfen)</span><input value={f.afa} placeholder="z. B. 2 % linear – prüfen" onChange={s('afa')} /></label>
+        <label className="feld"><span>Anschaffungsdatum (TT.MM.JJJJ)<Info zu="Anschaffungsdatum (TT.MM.JJJJ)" /></span><input value={f.anschaffungsdatum} onChange={s('anschaffungsdatum')} /></label>
+        <label className="feld"><span>Anschaffungskosten gesamt (€)<Info zu="Anschaffungskosten gesamt (€)" /></span><input inputMode="decimal" value={f.kosten} onChange={s('kosten')} /></label>
+        <label className="feld"><span>Gebäudeanteil (%) – ohne Grund und Boden<Info zu="Gebäudeanteil (%) – ohne Grund und Boden" /></span><input inputMode="decimal" value={f.anteil} onChange={s('anteil')} /></label>
+        <label className="feld"><span>Baujahr<Info zu="Baujahr" /></span><input inputMode="numeric" value={f.baujahr} onChange={s('baujahr')} /></label>
+        <label className="feld"><span>AfA-Satz laut Steuerberater/Bescheid (Text, prüfen)<Info zu="AfA-Satz laut Steuerberater/Bescheid (Text, prüfen)" /></span><input value={f.afa} placeholder="z. B. 2 % linear – prüfen" onChange={s('afa')} /></label>
       </fieldset>
       {fehler.map((x) => <p key={x} className="fehler">{x}</p>)}
       <button disabled={!online || laeuft || fehler.length > 0} onClick={() => speichern({
@@ -211,25 +212,25 @@ function EinnahmenKarte({ objektId, einheiten, einnahmen, online, laeuft, speich
     <div className="karte">
       <h2>Einnahmen {AKTUELLES_JAHR}</h2>
       <div className="zeile">
-        <label className="feld"><span>Monat</span>
+        <label className="feld"><span>Monat<Info zu="Monat" /></span>
           <select value={monat} onChange={(x) => setMonat(Number(x.target.value))}>{MONATE.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}</select>
         </label>
-        <label className="feld"><span>Art</span>
+        <label className="feld"><span>Art<Info text="Miete = Kaltmiete, Nebenkosten = Vorauszahlungen bzw. Nachzahlungen der Mieter, Sonstiges = z. B. Stellplatz, Erstattungen." /></span>
           <select value={art} onChange={(x) => setArt(x.target.value as Einnahme['art'])}>
             <option>Miete</option><option>Nebenkosten</option><option>Sonstiges</option>
           </select>
         </label>
         {einheiten.length > 0 && (
-          <label className="feld"><span>Einheit</span>
+          <label className="feld"><span>Einheit<Info zu="Einheit" /></span>
             <select value={einheit} onChange={(x) => setEinheit(x.target.value)}>
               <option value="">– ganzes Objekt –</option>
               {einheiten.map((u) => <option key={u.id} value={u.id}>{u.bezeichnung}</option>)}
             </select>
           </label>
         )}
-        <label className="feld"><span>Betrag (€)</span><input inputMode="decimal" value={betrag} placeholder="650,00" onChange={(x) => setBetrag(x.target.value)} style={{ maxWidth: 110 }} /></label>
+        <label className="feld"><span>Betrag (€)<Info text="Tatsächlich erhaltener Betrag in Euro, z. B. 650,00. Mit dem Haken „Gleicher Betrag für alle Monate“ wird er für jeden Monat bis Dezember eingetragen." /></span><input inputMode="decimal" value={betrag} placeholder="650,00" onChange={(x) => setBetrag(x.target.value)} style={{ maxWidth: 110 }} /></label>
       </div>
-      <label className="feld"><span>Notiz</span><input value={notiz} onChange={(x) => setNotiz(x.target.value)} /></label>
+      <label className="feld"><span>Notiz<Info zu="Notiz" /></span><input value={notiz} onChange={(x) => setNotiz(x.target.value)} /></label>
       <label className="wahl" style={{ display: 'block' }}>
         <input type="checkbox" checked={serie} onChange={(x) => setSerie(x.target.checked)} /> Gleicher Betrag für alle Monate ab {MONATE[monat - 1]} bis Dez ({13 - monat} Zeilen)
       </label>

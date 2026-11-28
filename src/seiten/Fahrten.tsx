@@ -7,6 +7,7 @@ import { useStamm } from '../komponenten/hooks'
 import { FAHRTZWECKE, leereArbeitstage, pruefeFahrt, zaehle, type Arbeitstage, type Fahrt, type Fahrtzweck } from '../fachlich/personen'
 import { formatDatum } from '../fachlich/format'
 import { istAngemeldet } from '../google/auth'
+import Info from '../komponenten/Info'
 
 const konfig = KONFIGURATIONEN[AKTUELLES_JAHR]
 const zahl = (n: number | null) => (n === null ? '–' : n.toLocaleString('de-DE', { maximumFractionDigits: 1 }))
@@ -100,7 +101,7 @@ export default function Fahrten() {
 function Zaehlfeld({ label, wert, setze }: { label: string; wert: number; setze: (n: number) => void }) {
   return (
     <div className="feld">
-      <span style={{ display: 'block', fontSize: '0.9rem' }}>{label}</span>
+      <span style={{ display: 'block', fontSize: '0.9rem' }}>{label}<Info zu={label} /></span>
       <div className="zeile">
         <button className="zweit" onClick={() => setze(Math.max(0, wert - 1))} aria-label={`${label} minus 1`}>−1</button>
         <input aria-label={label} inputMode="numeric" style={{ maxWidth: 80, textAlign: 'right' }} value={wert}
@@ -124,7 +125,7 @@ function TageKarte({ person, gespeichert, online, laeuft, speichern }: {
       <h2>Arbeitstage und Homeoffice</h2>
       <Zaehlfeld label="Arbeitstage an der Tätigkeitsstätte" wert={a.arbeitstage} setze={(n) => setA((x) => ({ ...x, arbeitstage: n }))} />
       <Zaehlfeld label="Homeoffice-Tage" wert={a.homeoffice_tage} setze={(n) => setA((x) => ({ ...x, homeoffice_tage: n }))} />
-      <label className="feld"><span>Entfernung Wohnung – erste Tätigkeitsstätte, einfach (km)</span>
+      <label className="feld"><span>Entfernung Wohnung – erste Tätigkeitsstätte, einfach (km)<Info zu="Entfernung Wohnung – erste Tätigkeitsstätte, einfach (km)" /></span>
         <input inputMode="decimal" style={{ maxWidth: 100 }} value={km} onChange={(x) => setKm(x.target.value)} />
       </label>
       {kmFalsch && <p className="fehler">Entfernung keine gültige Zahl</p>}
@@ -148,20 +149,20 @@ function FahrtKarte({ person, online, laeuft, speichern }: { person: string; onl
     <div className="karte">
       <h2>Fahrt eintragen</h2>
       <div className="zeile" style={{ alignItems: 'flex-start' }}>
-        <label className="feld"><span>Datum *</span><input type="date" value={f.datum} onChange={s('datum')} /></label>
-        <label className="feld"><span>Zweck</span>
+        <label className="feld"><span>Datum *<Info zu="Datum *" /></span><input type="date" value={f.datum} onChange={s('datum')} /></label>
+        <label className="feld"><span>Zweck<Info zu="Zweck" /></span>
           <select value={f.zweck} onChange={(x) => setF((a) => ({ ...a, zweck: x.target.value as Fahrtzweck }))}>
             {FAHRTZWECKE.map((z) => <option key={z}>{z}</option>)}
           </select>
         </label>
       </div>
-      <label className="feld"><span>Start</span><input value={f.start} onChange={s('start')} placeholder="z. B. Kalkar" /></label>
-      <label className="feld"><span>Ziel *</span><input value={f.ziel} onChange={s('ziel')} placeholder="z. B. Baustelle Kleve, Schulung Düsseldorf" /></label>
+      <label className="feld"><span>Start<Info zu="Start" /></span><input value={f.start} onChange={s('start')} placeholder="z. B. Kalkar" /></label>
+      <label className="feld"><span>Ziel *<Info zu="Ziel *" /></span><input value={f.ziel} onChange={s('ziel')} placeholder="z. B. Baustelle Kleve, Schulung Düsseldorf" /></label>
       <div className="zeile">
-        <label className="feld"><span>km (einfach) *</span><input inputMode="decimal" style={{ maxWidth: 90 }} value={kmText} onChange={(x) => setKmText(x.target.value)} /></label>
-        <label className="feld"><span>Fahrzeug</span><input value={f.fahrzeug} onChange={s('fahrzeug')} placeholder="z. B. privater Pkw" /></label>
+        <label className="feld"><span>km (einfach) *<Info zu="km (einfach) *" /></span><input inputMode="decimal" style={{ maxWidth: 90 }} value={kmText} onChange={(x) => setKmText(x.target.value)} /></label>
+        <label className="feld"><span>Fahrzeug<Info zu="Fahrzeug" /></span><input value={f.fahrzeug} onChange={s('fahrzeug')} placeholder="z. B. privater Pkw" /></label>
       </div>
-      <label className="wahl" style={{ display: 'block' }}><input type="checkbox" checked={hinUndZurueck} onChange={(x) => setHinUndZurueck(x.target.checked)} /> Hin und zurück (km × 2 = {zahl(km)} km)</label>
+      <label className="wahl" style={{ display: 'block' }}><input type="checkbox" checked={hinUndZurueck} onChange={(x) => setHinUndZurueck(x.target.checked)} /> Hin und zurück (km × 2 = {zahl(km)} km)<Info text="Anhaken, wenn Hin- und Rückfahrt zum selben Zweck gehören. Dann werden die Kilometer verdoppelt." /></label>
       {versucht && fehler.map((x) => <p key={x} className="fehler">{x}</p>)}
       <button disabled={!online || laeuft} onClick={() => {
         setVersucht(true)

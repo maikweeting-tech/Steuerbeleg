@@ -99,3 +99,13 @@ button.periode { min-height: 32px; padding: 2px 7px; font-size: 0.85rem; border-
   .p-ok { background: #1f4027; color: #bfe8c7; } .p-faellig { background: #4a3d10; color: #ffe8a0; }
   .p-fehlt { background: #5a1d18; color: #ffd0cb; } .p-kuenftig { background: #333; color: #aaa; }
 }
+
+/* i-Symbol mit Erklärung */
+button.info {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; min-height: 0; padding: 0; margin-left: 4px; vertical-align: text-bottom;
+  border-radius: 50%; border: 1px solid #1a5fb4; background: #fff; color: #1a5fb4;
+  font: italic bold 13px/1 Georgia, serif; cursor: pointer;
+}
+button.info[aria-expanded="true"] { background: #1a5fb4; color: #fff; }
+.info-text { display: block; margin: 4px 0 6px; padding: 6px 8px; background: #eef4fb; border-left: 3px solid #1a5fb4; border-radius: 4px; font-size: 0.85rem; color: #222; font-style: normal; font-weight: normal; }

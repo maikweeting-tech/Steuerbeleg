@@ -10,6 +10,7 @@ import { GrosseKnoepfe } from '../komponenten/Schnellerfassung'
 import { useDaten, useStamm } from '../komponenten/hooks'
 import { vollstaendigkeit } from '../fachlich/vorlagen'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import Info from '../komponenten/Info'
 
 const konfig = KONFIGURATIONEN[AKTUELLES_JAHR]
 
@@ -167,7 +168,7 @@ export default function Start() {
               <div className="zeile">
                 <button disabled={!!laeuft} onClick={() => aufgabe('Suche …', nachAnmeldung)}>Erneut suchen</button>
               </div>
-              <label className="feld" style={{ marginTop: 8 }}><span>Link zum Ordner (aus Drive oder der Freigabe-Mail)</span>
+              <label className="feld" style={{ marginTop: 8 }}><span>Link zum Ordner (aus Drive oder der Freigabe-Mail)<Info zu="Link zum Ordner (aus Drive oder der Freigabe-Mail)" /></span>
                 <input value={link} onChange={(x) => setLink(x.target.value)} placeholder="https://drive.google.com/drive/folders/…" />
               </label>
               <button className="zweit" disabled={!!laeuft || !link.trim()} onClick={() => aufgabe('Verbinde …', async () => {
