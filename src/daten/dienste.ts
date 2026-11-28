@@ -1,5 +1,6 @@
 // Verdrahtung der Synchronisierung mit Google und IndexedDB sowie automatischer Start.
 import type { Stichwort } from '../fachlich/zuordnung'
+import type { AfaEingabe } from '../fachlich/afa'
 import { AKTUELLES_JAHR, KONFIGURATIONEN } from '../konfig'
 import { istAngemeldet } from '../google/auth'
 import { datei, findeBelegDatei, findeInOrdner, holeOderErstellePfad, ladeHoch, ladeHochGross, ORDNER_MIME, SHEET_MIME, verschiebeDatei } from '../google/drive'
@@ -8,7 +9,7 @@ import { gespeicherteWurzel, richteEin } from './einrichtung'
 import { belegCache, melde, warteschlange } from './speicher'
 import { findeIndex, ladeBelege, synchronisiere, SyncFehler, type SyncDienste, type SyncErgebnis } from './sync'
 import {
-  LEER, stammAus, zeileAusArbeitstage, zeileAusEinheit, zeileAusEinnahme, zeileAusFahrt, zeileAusKind, zeileAusObjekt, zeileAusVorlage, zeileAusBuchung, zeileAusBescheid, zeileAusKopf, zeileAusAntwort, zeileAusStichwort, type Stamm,
+  LEER, stammAus, zeileAusArbeitstage, zeileAusEinheit, zeileAusEinnahme, zeileAusFahrt, zeileAusKind, zeileAusObjekt, zeileAusVorlage, zeileAusBuchung, zeileAusBescheid, zeileAusKopf, zeileAusAntwort, zeileAusStichwort, zeileAusAfa, type Stamm,
 } from './stamm'
 import type { Vorlage } from '../fachlich/vorlagen'
 import { KOPF_ID, type BescheidKopf, type BescheidPosten } from '../fachlich/bescheid'
@@ -94,7 +95,7 @@ function indexVon(jahr: number) {
   return p
 }
 
-const STAMM_BLAETTER = ['Objekte', 'Einheiten', 'Einnahmen', 'Aufteilung', 'Kinder', 'Fahrten', 'Arbeitstage', 'Auftraege', 'Vorlagen', 'Buchungen', 'Bescheid', 'Erklaerung', 'Stichwoerter']
+const STAMM_BLAETTER = ['Objekte', 'Einheiten', 'Einnahmen', 'Aufteilung', 'Kinder', 'Fahrten', 'Arbeitstage', 'Auftraege', 'Vorlagen', 'Buchungen', 'Bescheid', 'Erklaerung', 'Stichwoerter', 'AfA']
 
 export async function ladeStamm(jahr: number): Promise<Stamm> {
   const { indexId } = await indexVon(jahr)
@@ -277,6 +278,7 @@ export async function uebernehmeStamm(von: number, nach: number): Promise<{ obje
   for (const x of o) await speichereObjekt(nach, x)
   for (const x of e) await speichereEinheit(nach, x)
   for (const x of k) await speichereKind(nach, x)
+  for (const x of q.afa ?? []) if (!(z.afa ?? []).some((y) => y.objekt_id === x.objekt_id)) await speichereAfa(nach, x)
   await ladeStamm(nach)
   return { objekte: o.length, einheiten: e.length, kinder: k.length }
 }
@@ -327,5 +329,16 @@ export async function speichereStichwort(jahr: number, s: Stichwort, loeschen = 
     const z = zeileAusStichwort(x, nutzerEmail(), new Date().toISOString())
     if (!(await ersetzeZeile(indexId, 'Stichwoerter', x.stichwort, z))) await haengeAn(indexId, 'Stichwoerter', [z])
   }
+  return ladeStamm(jahr)
+}
+
+// ---------------------------------------------------------------- AfA-Hilfsrechnung
+
+/** Speichert die AfA-Angaben eines Objekts (eine Zeile je Objekt). */
+export async function speichereAfa(jahr: number, e: AfaEingabe) {
+  const { indexId } = await indexVon(jahr)
+  const z = zeileAusAfa(e, nutzerEmail(), new Date().toISOString())
+  if (!(await ersetzeZeile(indexId, 'AfA', e.objekt_id, z))) await haengeAn(indexId, 'AfA', [z])
+  await protokoll(indexId, 'afa gespeichert', e.objekt_id, '')
   return ladeStamm(jahr)
 }

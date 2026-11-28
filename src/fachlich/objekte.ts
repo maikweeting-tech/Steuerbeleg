@@ -1,5 +1,5 @@
 // Anlage V: Objekte, Einheiten, Aufteilung von Belegen, Einnahmen, Übersicht und Umlage.
-// Reine Rechenlogik ohne Google-Zugriff (testbar). Es wird KEINE Steuer und KEINE AfA berechnet.
+// Reine Rechenlogik ohne Google-Zugriff (testbar). Es wird KEINE Steuer berechnet (AfA nur als Hilfsrechnung, siehe afa.ts).
 import type { Beleg } from './beleg'
 import type { SteuerjahrKonfig } from './konfiguration'
 

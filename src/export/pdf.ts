@@ -9,6 +9,7 @@ import {
 export { mappenReihenfolge }
 import type { Beleg } from '../fachlich/beleg'
 import { dokumenteFuerJahr, zuordnungName } from '../fachlich/dokumente'
+import { afaImJahr, rechneAfa } from '../fachlich/afa'
 import { anzeigeWert, bereiche, gesamtFortschritt, klaeren, kontextAus, sichtbar, unterlagen } from '../fachlich/assistent'
 
 const A4: [number, number] = [595.28, 841.89]
@@ -222,6 +223,18 @@ export async function erklaerungPdf(d: ExportDaten): Promise<Blob> {
         `${x.gueltig_von ? formatDatum(x.gueltig_von) : '…'} – ${x.gueltig_bis ? formatDatum(x.gueltig_bis) : 'unbefristet'}`,
         [x.neu ? `NEU ${d.jahr}` : '', x.endet ? `endet ${d.jahr}` : '', x.notiz].filter(Boolean).join(' · ')]),
       [120, 170, 110, 95])
+  }
+
+  const afa = (d.stamm.afa ?? []).map((e) => ({ o: d.stamm.objekte.find((x) => x.id === e.objekt_id), r: rechneAfa(e) })).filter((x) => x.o)
+  if (afa.length) {
+    s.ueberschrift(`AfA-Hilfsrechnung ${d.jahr} (Vorschlag, bitte prüfen)`)
+    s.tabelle(['Objekt', 'Bemessungsgrundlage', 'Satz', `AfA ${d.jahr}`],
+      afa.map(({ o, r }) => r.fehlt.length
+        ? [o!.bezeichnung, `fehlt: ${r.fehlt.join(', ')}`, '', '']
+        : [o!.bezeichnung, formatEuro(r.bemessung_ct), `${String(r.satz?.prozent ?? 0).replace('.', ',')} %`, formatEuro(afaImJahr(r, d.jahr))]),
+      [150, 150, 60, 135])
+    for (const { o, r } of afa) for (const h of r.hinweise) s.text(`${o!.bezeichnung}: ${h}`, { size: 9 })
+    s.text('Rechenweg und Annahmen: Objektseite in der App bzw. Excel „AfA_<Objekt>.xlsx“. Satz nach § 7 Abs. 4 EStG, Grundstücksanteil und Rechtsstand prüfen.', { size: 9 })
   }
 
   for (const b of liste) {

@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { PDFDocument, StandardFonts } from 'pdf-lib'
 import { describe, expect, it } from 'vitest'
+import { leereAfa } from '../src/fachlich/afa'
 import { belegmappePdf, checklistePdf, erklaerungPdf, fragenPdf, mappenReihenfolge, saeubere } from '../src/export/pdf'
 import { testDaten } from './hilfen/exportDaten'
 
@@ -128,5 +129,16 @@ describe('PDF-Exporte', () => {
     expect(t).toContain('Kind 1 (Testkind)')
     expect(t).toContain('offen')
     expect(t).toContain('keine Steuer berechnet')
+  })
+
+  it.skipIf(!pdftotext)('Ausfüllhilfe: AfA-Hilfsrechnung je Objekt (Vorschlag, prüfen)', async () => {
+    const d = testDaten()
+    const o = d.stamm.objekte[0]
+    d.stamm.afa = [{ ...leereAfa(o.id), kaufpreis_ct: 25_000_000, grundanteil_prozent: 20, fertigstellungsjahr: 1975, uebergang: '2024-07-15' }]
+    const t = (await text(await erklaerungPdf(d))).replace(/\s+/g, ' ')
+    expect(t).toContain('AfA-Hilfsrechnung 2026 (Vorschlag, bitte prüfen)')
+    expect(t).toContain(o.bezeichnung)
+    expect(t).toContain('200.000,00') // 250.000 × 80 %
+    expect(t).toContain('4.000,00') // 2 %
   })
 })

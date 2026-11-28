@@ -12,6 +12,7 @@ import { formatDatum, formatEuro, parseBetrag, parseDatum } from '../fachlich/fo
 import { istAngemeldet } from '../google/auth'
 import ObjektDokumente from '../komponenten/ObjektDokumente'
 import Info from '../komponenten/Info'
+import AfaKarte from '../komponenten/AfaKarte'
 
 const konfig = KONFIGURATIONEN[AKTUELLES_JAHR]
 const vModul = konfig.module.find((m) => m.ebene === 'objekt')
@@ -57,11 +58,13 @@ export default function ObjektSeite() {
           <tr><td>Werbungskosten aus Belegen (ohne AfA)</td><td className="betrag">{formatEuro(summe.werbungskosten_ct)}</td></tr>
           <tr><td><strong>Saldo vor AfA</strong></td><td className="betrag"><strong>{formatEuro(summe.saldo_ct)}</strong></td></tr>
         </tbody></table>
-        <p className="klein">{summe.belege} Beleg(e). Keine Steuerberechnung, keine AfA-Berechnung. Nur übertragene Belege zählen.</p>
+        <p className="klein">{summe.belege} Beleg(e). Keine Steuerberechnung. AfA siehe Hilfsrechnung unten. Nur übertragene Belege zählen.</p>
       </div>
 
       <Grunddaten objekt={objekt} online={online} laeuft={!!laeuft}
         speichern={(o) => void aufgabe('Speichere …', () => speichereObjekt(AKTUELLES_JAHR, o))} />
+
+      <AfaKarte objekt={objekt} gespeichert={(stamm.afa ?? []).find((x) => x.objekt_id === id)} online={online} />
 
       <div className="karte">
         <h2>Einheiten</h2>
