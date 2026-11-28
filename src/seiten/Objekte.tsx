@@ -7,6 +7,7 @@ import { useDaten, useStamm } from '../komponenten/hooks'
 import { neuesObjekt, objektSumme } from '../fachlich/objekte'
 import { formatEuro } from '../fachlich/format'
 import { istAngemeldet } from '../google/auth'
+import Info from '../komponenten/Info'
 
 const konfig = KONFIGURATIONEN[AKTUELLES_JAHR]
 
@@ -49,7 +50,7 @@ export default function Objekte() {
 
       <div className="karte">
         <h2>Neues Objekt</h2>
-        <label className="feld"><span>Bezeichnung (wird auch Ordnername, später nicht mehr ändern)</span>
+        <label className="feld"><span>Bezeichnung (wird auch Ordnername, später nicht mehr ändern)<Info zu="Bezeichnung (wird auch Ordnername, später nicht mehr ändern)" /></span>
           <input value={name} placeholder="z. B. Kalkar Hauptstraße 5" onChange={(e) => setName(e.target.value)} />
         </label>
         <div className="zeile">

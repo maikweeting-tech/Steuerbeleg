@@ -13,6 +13,7 @@ import {
 } from '../fachlich/vorlagen'
 import { istAngemeldet } from '../google/auth'
 import StichwortPflege from '../komponenten/StichwortPflege'
+import Info from '../komponenten/Info'
 
 const konfig = KONFIGURATIONEN[AKTUELLES_JAHR]
 const heute = () => new Date().toISOString().slice(0, 10)
@@ -137,8 +138,8 @@ function Periode({ v, p, laeuft, fertig }: { v: Vorlage; p: PeriodenErgebnis; la
         <>
           <p className="klein">Bestätigen trägt einen Beleg mit Verweis auf den <a href={`https://drive.google.com/file/d/${v.dauerbeleg_datei_id}/view`} target="_blank" rel="noreferrer">Dauerbeleg</a> ein (keine neue PDF).</p>
           <div className="zeile">
-            <label className="feld"><span>Betrag €</span><input inputMode="decimal" style={{ maxWidth: 110 }} value={betrag} onChange={(x) => setBetrag(x.target.value)} /></label>
-            <label className="feld"><span>Zahlungsdatum</span><input type="date" value={datum} min={p.von} max={p.bis} onChange={(x) => setDatum(x.target.value)} /></label>
+            <label className="feld"><span>Betrag €<Info zu="Betrag €" /></span><input inputMode="decimal" style={{ maxWidth: 110 }} value={betrag} onChange={(x) => setBetrag(x.target.value)} /></label>
+            <label className="feld"><span>Zahlungsdatum<Info zu="Zahlungsdatum" /></span><input type="date" value={datum} min={p.von} max={p.bis} onChange={(x) => setDatum(x.target.value)} /></label>
           </div>
           <button disabled={laeuft || cent === null || !datum} onClick={() => void bestaetigen()}>Bestätigen</button>{' '}
         </>
@@ -186,7 +187,7 @@ function Vorlagen({ belege, vorlagen, online, laeuft, speichern }: {
 
       <h3 style={{ fontSize: '1rem' }}>Erwarteten Beleg ohne Vorbild anlegen</h3>
       <p className="klein">Z. B. Lohnsteuerbescheinigung, Jahressteuerbescheinigung der Bank, Spendenquittung.</p>
-      <label className="feld"><span>Bezeichnung *</span><input value={neu.bezeichnung} onChange={(x) => setNeu({ ...neu, bezeichnung: x.target.value })} placeholder="z. B. Lohnsteuerbescheinigung Maik" /></label>
+      <label className="feld"><span>Bezeichnung *<Info zu="Bezeichnung *" /></span><input value={neu.bezeichnung} onChange={(x) => setNeu({ ...neu, bezeichnung: x.target.value })} placeholder="z. B. Lohnsteuerbescheinigung Maik" /></label>
       <div className="zeile">
         <select aria-label="Modul" value={neu.modul} onChange={(x) => setNeu({ ...neu, modul: x.target.value, kategorie: '' })}>
           <option value="">– Modul –</option>{konfig.module.map((m) => <option key={m.id} value={m.id}>{modulName(m.id)}</option>)}
@@ -214,13 +215,13 @@ function VorlageForm({ v, setV, online, laeuft, speichern, abbrechen, loeschen }
   const fm = v.rhythmus === 'jaehrlich' ? 12 : v.rhythmus === 'vierteljaehrlich' ? 3 : 0
   return (
     <div className="karte" style={{ padding: 8 }}>
-      <label className="feld"><span>Bezeichnung</span><input value={v.bezeichnung} onChange={(x) => setV({ ...v, bezeichnung: x.target.value })} /></label>
-      <label className="feld"><span>Aussteller (für die Zuordnung vorhandener Belege, leer = egal)</span><input value={v.aussteller} onChange={(x) => setV({ ...v, aussteller: x.target.value })} /></label>
+      <label className="feld"><span>Bezeichnung<Info zu="Bezeichnung" /></span><input value={v.bezeichnung} onChange={(x) => setV({ ...v, bezeichnung: x.target.value })} /></label>
+      <label className="feld"><span>Aussteller (für die Zuordnung vorhandener Belege, leer = egal)<Info zu="Aussteller (für die Zuordnung vorhandener Belege, leer = egal)" /></span><input value={v.aussteller} onChange={(x) => setV({ ...v, aussteller: x.target.value })} /></label>
       <div className="zeile">
-        <label className="feld"><span>Betrag € (leer = schwankt)</span><input inputMode="decimal" style={{ maxWidth: 110 }} value={betrag} onChange={(x) => { setBetrag(x.target.value); setV({ ...v, betrag_ct: x.target.value.trim() ? parseBetrag(x.target.value) : null }) }} /></label>
-        <label className="feld"><span>Rhythmus</span><select value={v.rhythmus} onChange={(x) => setV({ ...v, rhythmus: x.target.value as Rhythmus, faellig_monat: 1 })}>{RHYTHMEN.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select></label>
+        <label className="feld"><span>Betrag € (leer = schwankt)<Info zu="Betrag € (leer = schwankt)" /></span><input inputMode="decimal" style={{ maxWidth: 110 }} value={betrag} onChange={(x) => { setBetrag(x.target.value); setV({ ...v, betrag_ct: x.target.value.trim() ? parseBetrag(x.target.value) : null }) }} /></label>
+        <label className="feld"><span>Rhythmus<Info zu="Rhythmus" /></span><select value={v.rhythmus} onChange={(x) => setV({ ...v, rhythmus: x.target.value as Rhythmus, faellig_monat: 1 })}>{RHYTHMEN.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select></label>
         {fm > 0 && (
-          <label className="feld"><span>{fm === 12 ? 'erwartet ab Monat' : 'Monat im Quartal'}</span>
+          <label className="feld"><span>{fm === 12 ? 'erwartet ab Monat' : 'Monat im Quartal'}<Info zu={fm === 12 ? 'erwartet ab Monat' : 'Monat im Quartal'} /></span>
             <select value={v.faellig_monat} onChange={(x) => setV({ ...v, faellig_monat: Number(x.target.value) })}>
               {Array.from({ length: fm }, (_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}
             </select>
@@ -255,8 +256,8 @@ function Erinnerung() {
     <div className="karte">
       <h2>Monatliche Erinnerung</h2>
       <div className="zeile">
-        <label className="feld"><span>Tag im Monat</span><select value={tag} onChange={(x) => setTag(Number(x.target.value))}>{Array.from({ length: 28 }, (_, i) => <option key={i} value={i + 1}>{i + 1}.</option>)}</select></label>
-        <label className="feld"><span>Uhrzeit</span><select value={stunde} onChange={(x) => setStunde(Number(x.target.value))}>{Array.from({ length: 16 }, (_, i) => <option key={i} value={i + 7}>{i + 7}:00</option>)}</select></label>
+        <label className="feld"><span>Tag im Monat<Info zu="Tag im Monat" /></span><select value={tag} onChange={(x) => setTag(Number(x.target.value))}>{Array.from({ length: 28 }, (_, i) => <option key={i} value={i + 1}>{i + 1}.</option>)}</select></label>
+        <label className="feld"><span>Uhrzeit<Info zu="Uhrzeit" /></span><select value={stunde} onChange={(x) => setStunde(Number(x.target.value))}>{Array.from({ length: 16 }, (_, i) => <option key={i} value={i + 7}>{i + 7}:00</option>)}</select></label>
       </div>
       <div className="zeile">
         <a href={kalenderLink({ titel, text, tag, stunde, ab: new Date() })} target="_blank" rel="noreferrer"><button>In Google Kalender eintragen</button></a>

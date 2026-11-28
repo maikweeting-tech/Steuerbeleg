@@ -8,6 +8,7 @@ import { useDaten, useStamm } from '../komponenten/hooks'
 import { formatDatum, formatEuro } from '../fachlich/format'
 import { buchungenAus, dekodiere, gleicheAb, liesKontoauszug, MARKIERUNGEN, type Buchung, type Einlesen, type Markierung, type Spalten } from '../fachlich/kontoauszug'
 import { istAngemeldet } from '../google/auth'
+import Info from '../komponenten/Info'
 
 const FELDER: { k: keyof Spalten; name: string; pflicht?: boolean }[] = [
   { k: 'datum', name: 'Buchungsdatum', pflicht: true }, { k: 'betrag', name: 'Betrag', pflicht: true },
@@ -68,7 +69,7 @@ export default function Konto() {
           <details open={!ein.buchungen.length}>
             <summary className="klein">Spalten zuordnen (falls etwas nicht stimmt)</summary>
             {FELDER.map((f) => (
-              <label key={f.k} className="feld"><span>{f.name}{f.pflicht ? ' *' : ''}</span>
+              <label key={f.k} className="feld"><span>{f.name}{f.pflicht ? ' *' : ''}<Info zu={f.name} /></span>
                 <select value={ein.spalten[f.k]} onChange={(x) => ordneZu(f.k, Number(x.target.value))}>
                   <option value={-1}>– keine –</option>
                   {ein.kopf.map((k, i) => <option key={i} value={i}>{k || `Spalte ${i + 1}`}{ein.zeilen[0]?.[i] ? ` (z. B. ${ein.zeilen[0][i].slice(0, 25)})` : ''}</option>)}

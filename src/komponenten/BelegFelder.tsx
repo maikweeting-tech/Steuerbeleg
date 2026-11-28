@@ -6,6 +6,7 @@ import { belegHinweise, GEMEINSAM, steuerjahrAus, wirksamesSteuerjahr, type Bele
 import { formatEuro, parseBetrag } from '../fachlich/format'
 import type { Stamm } from '../daten/stamm'
 import ObjektZuordnung from './ObjektZuordnung'
+import Info from './Info'
 
 interface Props {
   e: BelegEntwurf
@@ -31,7 +32,7 @@ const centText = (c: number | null) => (c === null ? '' : formatEuro(c).replace(
 function Betrag({ label, wert, setze }: { label: string; wert: number | null; setze: (c: number | null) => void }) {
   const [t, setT] = useState(() => centText(wert))
   return (
-    <label className="feld"><span>{label}</span>
+    <label className="feld"><span>{label}<Info zu={label} /></span>
       <input inputMode="decimal" value={t} onChange={(x) => { setT(x.target.value); setze(x.target.value.trim() ? parseBetrag(x.target.value) : null) }} style={{ maxWidth: 140 }} />
       {t.trim() && parseBetrag(t) === null && <span className="fehler klein"> keine gültige Zahl</span>}
     </label>
@@ -48,21 +49,21 @@ export default function BelegFelder({ e, setE, betragText, setBetragText, zahlun
   return (
     <>
       <div className="zeile" style={{ alignItems: 'flex-start' }}>
-        <label className="feld"><span>Belegdatum *</span>
+        <label className="feld"><span>Belegdatum *<Info zu="Belegdatum *" /></span>
           <input type="date" value={e.belegdatum} onChange={(x) => {
             const v = x.target.value
             setE((a) => ({ ...a, belegdatum: v, zahlungsdatum: zahlungGeaendert ? a.zahlungsdatum : v }))
           }} />
         </label>
-        <label className="feld"><span>Zahlungsdatum *</span>
+        <label className="feld"><span>Zahlungsdatum *<Info zu="Zahlungsdatum *" /></span>
           <input type="date" value={e.zahlungsdatum} onChange={(x) => { setZahlungGeaendert(true); setze('zahlungsdatum', x.target.value) }} />
         </label>
       </div>
-      <label className="feld"><span>Betrag brutto in € *</span>
+      <label className="feld"><span>Betrag brutto in € *<Info zu="Betrag brutto in € *" /></span>
         <input inputMode="decimal" placeholder="z. B. 412,50" value={betragText} onChange={(x) => { setBetragText(x.target.value); setze('betrag_ct', parseBetrag(x.target.value)) }} />
         {e.betrag_ct !== null && <span className="klein"> = {formatEuro(e.betrag_ct)}</span>}
       </label>
-      <label className="feld"><span>Aussteller *</span>
+      <label className="feld"><span>Aussteller *<Info zu="Aussteller *" /></span>
         <input list="aussteller" value={e.aussteller} onChange={(x) => setze('aussteller', x.target.value)} />
         <datalist id="aussteller">{aussteller.map((a) => <option key={a} value={a} />)}</datalist>
       </label>
@@ -70,21 +71,21 @@ export default function BelegFelder({ e, setE, betragText, setBetragText, zahlun
       {children}
 
       <fieldset className="feld" style={{ border: 0, padding: 0, margin: '0 0 10px' }}>
-        <span style={{ display: 'block', fontSize: '0.9rem', marginBottom: 3 }}>Person *</span>
+        <span style={{ display: 'block', fontSize: '0.9rem', marginBottom: 3 }}>Person *<Info zu="Person" /></span>
         <div className="zeile">
           {[...konfig.personen, { id: GEMEINSAM, name: 'gemeinsam' }].map((p) => (
             <label key={p.id} className="wahl"><input type="radio" name="person" checked={e.person === p.id} onChange={() => setze('person', p.id)} /> {p.name}</label>
           ))}
         </div>
       </fieldset>
-      <label className="feld"><span>Modul *</span>
+      <label className="feld"><span>Modul *<Info zu="Modul *" /></span>
         <select value={e.modul} onChange={(x) => setE((a) => ({ ...a, modul: x.target.value, kategorie: '', objekt_id: '', einheit_id: '', aufteilung: [], umlagefaehig: false, kind_id: '' }))}>
           <option value="">– wählen –</option>
           {konfig.module.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
         </select>
       </label>
       {modul && modul.kategorien.length > 0 && (
-        <label className="feld"><span>Kategorie *</span>
+        <label className="feld"><span>Kategorie *<Info zu="Kategorie *" /></span>
           <select value={e.kategorie} onChange={(x) => {
             const k = modul.kategorien.find((y) => y.schluessel === x.target.value)
             setE((a) => ({ ...a, kategorie: x.target.value, umlagefaehig: modul.ebene === 'objekt' ? !!k?.umlagefaehig_vorschlag : false }))
@@ -96,7 +97,7 @@ export default function BelegFelder({ e, setE, betragText, setBetragText, zahlun
       )}
       {modul?.ebene === 'objekt' && <ObjektZuordnung e={e} setE={setE} stamm={stamm} />}
       {modul?.ebene === 'kind' && (stamm.kinder.length ? (
-        <label className="feld"><span>Kind *</span>
+        <label className="feld"><span>Kind *<Info zu="Kind *" /></span>
           <select value={e.kind_id} onChange={(x) => setze('kind_id', x.target.value)}>
             <option value="">– wählen –</option>
             {stamm.kinder.map((k) => <option key={k.id} value={k.id}>{k.name}</option>)}
@@ -107,7 +108,7 @@ export default function BelegFelder({ e, setE, betragText, setBetragText, zahlun
       {modul?.id === '35A' && (
         <div className="karte" style={{ padding: 8 }}>
           <fieldset className="feld" style={{ border: 0, padding: 0, margin: '0 0 6px' }}>
-            <span style={{ display: 'block', fontSize: '0.9rem', marginBottom: 3 }}>Zahlungsart</span>
+            <span style={{ display: 'block', fontSize: '0.9rem', marginBottom: 3 }}>Zahlungsart<Info zu="Zahlungsart" /></span>
             <div className="zeile">
               <label className="wahl"><input type="radio" name="zahlungsart" checked={e.zahlungsart === 'unbar'} onChange={() => setze('zahlungsart', 'unbar')} /> unbar (Überweisung, Lastschrift)</label>
               <label className="wahl"><input type="radio" name="zahlungsart" checked={e.zahlungsart === 'bar'} onChange={() => setze('zahlungsart', 'bar')} /> bar</label>
@@ -128,24 +129,24 @@ export default function BelegFelder({ e, setE, betragText, setBetragText, zahlun
         {!jahrFest && (
           <label className="wahl" style={{ display: 'block' }}>
             <input type="checkbox" checked={e.steuerjahr_manuell} onChange={(x) => setE((a) => ({ ...a, steuerjahr_manuell: x.target.checked, steuerjahr: a.steuerjahr ?? steuerjahrAus(a.zahlungsdatum) }))} />
-            {' '}Steuerjahr abweichend festlegen (z. B. 10-Tage-Regel, § 11 EStG – bitte selbst prüfen)
+            {' '}Steuerjahr abweichend festlegen (z. B. 10-Tage-Regel, § 11 EStG – bitte selbst prüfen)<Info text="Normalerweise zählt das Jahr der Zahlung. Nur anhaken, wenn die Steuerberatung sagt, dass der Beleg in ein anderes Jahr gehört, z. B. bei regelmäßigen Zahlungen kurz vor oder nach Silvester (10-Tage-Regel, prüfen)." />
           </label>
         )}
         {!jahrFest && e.steuerjahr_manuell && (
           <input type="number" style={{ maxWidth: 120 }} value={e.steuerjahr ?? ''} onChange={(x) => setze('steuerjahr', x.target.value ? Number(x.target.value) : null)} />
         )}
       </div>
-      <label className="feld"><span>Status</span>
+      <label className="feld"><span>Status<Info zu="Status" /></span>
         <select value={e.status} onChange={(x) => setze('status', x.target.value as BelegEntwurf['status'])}>
           <option value="offen">offen</option>
           <option value="unvollständig">unvollständig</option>
           <option value="geprüft">geprüft</option>
         </select>
       </label>
-      <label className="feld"><span>Notiz</span>
+      <label className="feld"><span>Notiz<Info zu="Notiz" /></span>
         <textarea value={e.notiz} onChange={(x) => setze('notiz', x.target.value)} placeholder="Tipp: Mikrofon der Tastatur für Spracheingabe" />
       </label>
-      <label className="feld"><span>❓ Frage an den Steuerberater (leer = keine)</span>
+      <label className="feld"><span>❓ Frage an den Steuerberater (leer = keine)<Info zu="❓ Frage an den Steuerberater (leer = keine)" /></span>
         <textarea value={e.frage} onChange={(x) => setze('frage', x.target.value)} placeholder="z. B. Ist das als Werbungskosten absetzbar?" rows={2} />
       </label>
     </>

@@ -10,6 +10,7 @@ import {
   anzeigeWert, bereiche, kontextAus, fortschritt, gesamtFortschritt, hinweisText, klaeren, naechsteOffene, sichtbar, unterlagen, WEISS_NICHT,
   type Antwort, type Frage,
 } from '../fachlich/assistent'
+import Info from '../komponenten/Info'
 
 const JN = [{ wert: 'ja', name: 'Ja' }, { wert: 'nein', name: 'Nein' }, { wert: WEISS_NICHT, name: 'Weiß nicht' }]
 
@@ -21,8 +22,7 @@ function FrageKarte({ f, a, hinweis, aktiv, online, speichere }: { f: Frage; a?:
   const optionen = f.typ === 'ja_nein' ? JN : f.optionen
   return (
     <div className="karte" style={aktiv ? { outline: '2px solid var(--blau)' } : undefined}>
-      <p><strong>{f.frage}</strong> {wert && <span className="ok">✓</span>}</p>
-      <details><summary className="klein">Was bedeutet das?</summary><p className="klein">{f.erklaerung}</p></details>
+      <p><strong>{f.frage}</strong><Info text={f.erklaerung} /> {wert && <span className="ok">✓</span>}</p>
       {optionen ? (
         <div className="zeile">
           {optionen.map((o) => (
@@ -43,7 +43,7 @@ function FrageKarte({ f, a, hinweis, aktiv, online, speichere }: { f: Frage; a?:
       {f.info && <p className="klein">{f.info}</p>}
       {hinweis && <p className="warnung klein">{hinweis}</p>}
       {f.unterlage && wert === 'ja' && <p className="klein">📄 Unterlage für die Steuerberatung: <strong>{f.unterlage.name}</strong></p>}
-      <label className="feld" style={{ marginTop: 6 }}><span className="klein">Notiz (optional)</span>
+      <label className="feld" style={{ marginTop: 6 }}><span className="klein">Notiz (optional)<Info zu="Notiz (optional)" /></span>
         <input value={notiz} onChange={(e) => setNotiz(e.target.value)} onBlur={() => { if (notiz !== (a?.notiz ?? '') && online) void speichere(wert, notiz) }} />
       </label>
       {f.formular !== '–' && <p className="klein" style={{ color: '#666' }}>Formular: {f.formular} – Zeile bitte prüfen</p>}

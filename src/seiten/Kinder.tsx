@@ -5,6 +5,7 @@ import { speichereKind } from '../daten/dienste'
 import { useDaten, useStamm } from '../komponenten/hooks'
 import { formatDatum, parseDatum } from '../fachlich/format'
 import { istAngemeldet } from '../google/auth'
+import Info from '../komponenten/Info'
 
 export default function Kinder() {
   const stamm = useStamm(AKTUELLES_JAHR)
@@ -39,8 +40,8 @@ export default function Kinder() {
       </div>
       <div className="karte">
         <h2>Kind anlegen</h2>
-        <label className="feld"><span>Vorname (wird Ordnername, später nicht mehr ändern)</span><input value={name} onChange={(x) => setName(x.target.value)} /></label>
-        <label className="feld"><span>Geburtsdatum (TT.MM.JJJJ, optional)</span><input value={geb} onChange={(x) => setGeb(x.target.value)} /></label>
+        <label className="feld"><span>Vorname (wird Ordnername, später nicht mehr ändern)<Info zu="Vorname (wird Ordnername, später nicht mehr ändern)" /></span><input value={name} onChange={(x) => setName(x.target.value)} /></label>
+        <label className="feld"><span>Geburtsdatum (TT.MM.JJJJ, optional)<Info zu="Geburtsdatum (TT.MM.JJJJ, optional)" /></span><input value={geb} onChange={(x) => setGeb(x.target.value)} /></label>
         {gebIso === null && <p className="fehler">Datum als TT.MM.JJJJ</p>}
         <button disabled={!online || laeuft || !name.trim() || gebIso === null} onClick={() => void aufgabe(async () => {
           if (stamm.kinder.some((k) => k.name.trim().toLowerCase() === name.trim().toLowerCase())) throw new Error('Ein Kind mit diesem Namen gibt es schon.')
