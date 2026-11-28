@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { HashRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import Start from './seiten/Start'
 import Info from './seiten/Info'
+import Dokumente from './seiten/Dokumente'
 import Erfassen from './seiten/Erfassen'
 import Belege from './seiten/Belege'
 import Objekte from './seiten/Objekte'
@@ -40,6 +41,7 @@ function Navigation() {
       <NavLink to="/export">Export</NavLink>
       <NavLink to="/bescheid">Bescheid</NavLink>
       <NavLink to="/objekte">Objekte</NavLink>
+      <NavLink to="/dokumente">Dokumente</NavLink>
       <NavLink to="/fahrten">Fahrten</NavLink>
       <NavLink to="/kinder">Kinder</NavLink>
       <NavLink to="/info">Info</NavLink>
@@ -81,6 +83,7 @@ export default function App() {
           <Route path="/export" element={<Export />} />
           <Route path="/bescheid" element={<Bescheid />} />
           <Route path="/erklaerung" element={<Erklaerung />} />
+          <Route path="/dokumente" element={<Dokumente />} />
           <Route path="/info" element={<Info />} />
         </Routes>
       </main>

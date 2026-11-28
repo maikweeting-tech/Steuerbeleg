@@ -1,6 +1,7 @@
 // Auswertung für die Exporte (M7). Reine Rechenlogik in Cent – dient der Checkliste (PDF)
 // und als unabhängige Gegenrechnung zu den Excel-Formeln (Tests).
 import type { Beleg } from '../fachlich/beleg'
+import type { Dokument } from '../fachlich/dokumente'
 import type { SteuerjahrKonfig } from '../fachlich/konfiguration'
 import { anteilFuerObjekt, objektSumme, umlage } from '../fachlich/objekte'
 import type { Stamm } from '../daten/stamm'
@@ -15,6 +16,8 @@ export interface ExportDaten {
   vorjahr: Beleg[] | null
   /** ISO-Zeitpunkt der Erstellung */
   erstellt: string
+  /** Dokumentenablage (Verträge), falls geladen */
+  dokumente?: Dokument[]
 }
 
 export interface KatSumme { modul: string; kategorie: string; anzahl: number; summe_ct: number; je_person: Record<string, number> }

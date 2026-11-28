@@ -110,7 +110,15 @@ describe('PDF-Exporte', () => {
       kinder_anzahl: { wert: '1', notiz: '' },
       kind1_name: { wert: 'Testkind', notiz: '' },
     }
+    d.dokumente = [
+      { id: 'x', titel: 'Testvertrag', art: 'Mietvertrag', zuordnung: 'allgemein', gueltig_von: '2026-03-01', gueltig_bis: '', datei_id: 'F', dateiname: '', notiz: '', erfasst_von: '', erfasst_am: '' },
+      { id: 'y', titel: 'Alt', art: 'Versicherung', zuordnung: 'allgemein', gueltig_von: '', gueltig_bis: '2020-01-01', datei_id: 'G', dateiname: '', notiz: '', erfasst_von: '', erfasst_am: '' },
+    ]
     const t = (await text(await erklaerungPdf(d))).replace(/\s+/g, ' ')
+    expect(t).toContain('Verträge und Dokumente 2026 (1')
+    expect(t).toContain('Mietvertrag: Testvertrag')
+    expect(t).toContain('NEU 2026')
+    expect(t).not.toContain('Versicherung: Alt')
     expect(t).toContain('Ausfüllhilfe Steuererklärung 2026')
     expect(t).toContain('Mit der Steuerberatung klären (2)') // Frist + Barzahlung § 35a aus den Testbelegen
     expect(t).toContain('bar bezahlt')

@@ -155,3 +155,8 @@ export async function ladeHochGross(name: string, mimeType: string, inhalt: Blob
   if (!r.ok) throw new Error(`Upload fehlgeschlagen (${r.status})`)
   return r.json()
 }
+
+/** Datei in den Papierkorb (in Drive 30 Tage wiederherstellbar). */
+export async function inPapierkorb(id: string): Promise<void> {
+  await googleFetch(`${DRIVE}/${encodeURIComponent(id)}?supportsAllDrives=true`, { method: 'PATCH', body: JSON.stringify({ trashed: true }) })
+}

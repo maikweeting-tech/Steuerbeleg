@@ -8,6 +8,7 @@ import {
 } from './auswertung'
 export { mappenReihenfolge }
 import type { Beleg } from '../fachlich/beleg'
+import { dokumenteFuerJahr, zuordnungName } from '../fachlich/dokumente'
 import { anzeigeWert, bereiche, gesamtFortschritt, klaeren, kontextAus, sichtbar, unterlagen } from '../fachlich/assistent'
 
 const A4: [number, number] = [595.28, 841.89]
@@ -211,6 +212,17 @@ export async function erklaerungPdf(d: ExportDaten): Promise<Blob> {
   s.ueberschrift(`Unterlagen für die Steuerberatung (${un.length})`)
   if (!un.length) s.text('Keine Unterlagen aus den Antworten.')
   for (const u of un) s.text(`[ ] ${u.name} (${u.bereich})`)
+
+  if (d.dokumente) {
+    const dok = dokumenteFuerJahr(d.dokumente, d.jahr)
+    s.ueberschrift(`Verträge und Dokumente ${d.jahr} (${dok.length}, liegen in Drive unter Steuer/Dokumente)`)
+    if (!dok.length) s.text('Keine Dokumente mit Gültigkeit im Jahr abgelegt.')
+    else s.tabelle(['Gehört zu', 'Dokument', 'Gültig', 'Hinweis'],
+      dok.map((x) => [zuordnungName(x.zuordnung, d.stamm.objekte, d.konfig.personen), `${x.art}: ${x.titel}`,
+        `${x.gueltig_von ? formatDatum(x.gueltig_von) : '…'} – ${x.gueltig_bis ? formatDatum(x.gueltig_bis) : 'unbefristet'}`,
+        [x.neu ? `NEU ${d.jahr}` : '', x.endet ? `endet ${d.jahr}` : '', x.notiz].filter(Boolean).join(' · ')]),
+      [120, 170, 110, 95])
+  }
 
   for (const b of liste) {
     const fr = b.fragen.filter((f) => sichtbar(f, a))
