@@ -18,6 +18,7 @@ import Bescheid from './seiten/Bescheid'
 import Erklaerung from './seiten/Erklaerung'
 import { starteAnmeldung, stilleAnmeldungMoeglich } from './google/auth'
 import { automatischerSync } from './daten/dienste'
+import { erinnereBeimStart } from './daten/erinnern'
 import { useDaten } from './komponenten/hooks'
 import { AKTUELLES_JAHR, JAHRE, waehleJahr } from './konfig'
 import { KameraKnopf } from './komponenten/Schnellerfassung'
@@ -56,6 +57,8 @@ export default function App() {
     // Nach erneutem Öffnen still neu anmelden (einmal je Tab), sonst Warteschlange übertragen
     if (stilleAnmeldungMoeglich()) starteAnmeldung(true)
     else automatischerSync()
+    // Fehlende Belege / ablaufende Fristen melden (nur wenn Benachrichtigungen erlaubt sind)
+    void erinnereBeimStart()
   }, [])
 
   return (

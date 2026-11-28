@@ -4,6 +4,7 @@
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching'
 import { NavigationRoute, registerRoute } from 'workbox-routing'
 import { clientsClaim } from 'workbox-core'
+import { erinnere, SYNC_TAG, zeigeMit } from './daten/erinnern'
 
 declare const self: ServiceWorkerGlobalScope
 
@@ -34,3 +35,23 @@ self.addEventListener('fetch', (event) => {
 })
 
 registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html')))
+
+// Erinnerungen im Hintergrund (Periodic Background Sync: nur Chrome/Android, installierte App, Takt bestimmt der Browser)
+interface PeriodicSyncEvent extends ExtendableEvent { tag: string }
+self.addEventListener('periodicsync' as keyof ServiceWorkerGlobalScopeEventMap, ((event: PeriodicSyncEvent) => {
+  if (event.tag !== SYNC_TAG) return
+  event.waitUntil(erinnere(zeigeMit(self.registration)).catch(() => 0))
+}) as EventListener)
+
+// Tippen auf die Benachrichtigung öffnet die passende Seite der App
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const ziel = (event.notification.data as { ziel?: string } | undefined)?.ziel ?? '/'
+  const url = `${self.registration.scope}#${ziel}`
+  event.waitUntil((async () => {
+    const fenster = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+    const offen = fenster[0] as WindowClient | undefined
+    if (offen) { await offen.navigate(url).catch(() => undefined); return offen.focus() }
+    return self.clients.openWindow(url)
+  })())
+})
