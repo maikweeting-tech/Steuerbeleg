@@ -1,6 +1,6 @@
 // Dokumentenablage: Verträge und Dauerdokumente, unabhängig vom Steuerjahr (Drive: Steuer/Dokumente).
 import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AKTUELLES_JAHR, KONFIGURATIONEN } from '../konfig'
 import { loescheDokument, speichereDokument } from '../daten/dokumentablage'
 import { useStamm } from '../komponenten/hooks'
@@ -19,7 +19,10 @@ export default function Dokumente() {
   const online = istAngemeldet()
   const leer = { titel: '', art: 'Mietvertrag', zuordnung: params.get('zuordnung') ?? 'allgemein', gueltig_von: '', gueltig_bis: '', notiz: '' }
   const [e, setE] = useState(leer)
-  const [datei, setDatei] = useState<File | null>(null)
+  // Aus dem Eingang: Datei liegt schon in Drive (?eingang=<id>&name=<dateiname>)
+  const eingang = params.get('eingang') ? { id: params.get('eingang')!, name: params.get('name') ?? 'Dokument.pdf' } : null
+  const [datei, setDatei] = useState<File | { id: string; name: string } | null>(eingang)
+  const navigate = useNavigate()
   const [laeuft, setLaeuft] = useState('')
   const [fehler, setFehler] = useState('')
   const [loeschen, setLoeschen] = useState('')
@@ -29,7 +32,11 @@ export default function Dokumente() {
   const speichern = async () => {
     if (!datei) return
     setFehler(''); setLaeuft('Lade hoch …')
-    try { await speichereDokument(e, datei, objekte, personen); setE({ ...leer, zuordnung: e.zuordnung }); setDatei(null); await neuLaden() }
+    try {
+      await speichereDokument(e, datei, objekte, personen)
+      if (eingang) { navigate('/eingang', { state: { meldung: `„${e.titel}“ in Dokumente abgelegt.` } }); return }
+      setE({ ...leer, zuordnung: e.zuordnung }); setDatei(null); await neuLaden()
+    }
     catch (x) { setFehler(x instanceof Error ? x.message : String(x)) } finally { setLaeuft('') }
   }
   const entfernen = async (d: Dokument) => {
@@ -44,7 +51,9 @@ export default function Dokumente() {
       <div className="karte">
         <p className="klein">Verträge und Dauerdokumente, unabhängig vom Steuerjahr. Ablage in Drive unter „Steuer/Dokumente“, Liste „00_Dokumente“. Gültige Dokumente stehen in der Ausfüllhilfe für die Steuerberatung.</p>
         <h2>Neues Dokument</h2>
-        <label className="feld"><span>Datei (PDF oder Foto)</span><input type="file" accept="application/pdf,image/*" onChange={(x) => setDatei(x.target.files?.[0] ?? null)} /></label>
+        {eingang
+          ? <p>Datei aus dem Eingang: <a href={driveDateiLink(eingang.id)} target="_blank" rel="noreferrer">{eingang.name}</a><br /><span className="klein">Sie wird umbenannt und in den passenden Ordner unter „Steuer/Dokumente“ verschoben.</span></p>
+          : <label className="feld"><span>Datei (PDF oder Foto)</span><input type="file" accept="application/pdf,image/*" onChange={(x) => setDatei(x.target.files?.[0] ?? null)} /></label>}
         <label className="feld"><span>Titel (z. B. „Mietvertrag EG“)</span><input value={e.titel} onChange={(x) => setE({ ...e, titel: x.target.value })} /></label>
         <div className="zeile">
           <label className="feld"><span>Art</span><select value={e.art} onChange={(x) => setE({ ...e, art: x.target.value })}>{ARTEN.map((a) => <option key={a}>{a}</option>)}</select></label>

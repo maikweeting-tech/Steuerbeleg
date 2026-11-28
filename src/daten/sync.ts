@@ -25,6 +25,8 @@ export interface SyncDienste {
   ladeHoch: (name: string, mime: string, inhalt: Blob, elternId: string, app: Record<string, string>) => Promise<{ id: string; name: string }>
   leseBlatt: (sheetId: string, blatt: string) => Promise<Zelle[][]>
   haengeAn: (sheetId: string, blatt: string, zeilen: Zelle[][]) => Promise<void>
+  /** Nur für Belege aus dem Eingang nötig */
+  verschiebeDatei?: (id: string, name: string, ordnerId: string) => Promise<{ id: string; name: string; offen?: boolean }>
 }
 
 export interface Ablage {
@@ -74,7 +76,20 @@ export async function uebertrage(w: Wartend, d: SyncDienste, jahre: Map<number, 
 
   let datei = w.pdf ? await d.findeBelegDatei(w.id) : null
   let nr = Number(/_B(\d+)_/.exec(datei?.name ?? '')?.[1] ?? 0)
-  if (!w.pdf) {
+  let auftrag: Zelle[] | null = null
+  if (w.quelle) {
+    // PDF aus dem Eingang: vorhandene Datei umbenennen und in den Zielordner verschieben (kein zweites Exemplar).
+    // Wiederholbar: Liegt sie schon richtig, ändert das Verschieben nichts.
+    if (!d.verschiebeDatei) throw new SyncFehler('Verschieben nicht verfügbar')
+    nr = naechsteBelegnr(j.belege, jahr)
+    const name = dateiname(w.entwurf, nr)
+    const pfad = zielOrdnerPfad(w.entwurf, konfig, j.objekte, j.kinder)
+    const ziel = await d.holeOderErstellePfad(pfad, j.ordnerId)
+    const erg = await d.verschiebeDatei(w.quelle.id, name, ziel.id)
+    datei = { id: w.quelle.id, name }
+    // Darf nur der Eigentümer verschieben: Auftrag hinterlegen, den dessen App erledigt (wie beim Bearbeiten)
+    if (erg.offen) auftrag = [crypto.randomUUID(), 'verschieben', w.id, w.quelle.id, pfad.join('/'), name, d.nutzer(), d.jetzt(), '']
+  } else if (!w.pdf) {
     // E6: Beleg aus Vorlage – verweist auf den Dauerbeleg, es wird keine Datei hochgeladen
     nr = naechsteBelegnr(j.belege, jahr)
     // dateiname bleibt leer: so wird der Dauerbeleg beim Bearbeiten nie verschoben oder umbenannt
@@ -96,7 +111,8 @@ export async function uebertrage(w: Wartend, d: SyncDienste, jahre: Map<number, 
     j.aufteilung.push(...w.entwurf.aufteilung.map((a) => ({ ...a, beleg_id: w.id })))
   }
   await d.haengeAn(j.indexId, 'Belege', [zeileAus(beleg)])
-  await d.haengeAn(j.indexId, 'Protokoll', [[jetzt, d.nutzer(), 'erfasst', w.id, '', '', datei.name]])
+  await d.haengeAn(j.indexId, 'Protokoll', [[jetzt, d.nutzer(), w.quelle ? 'erfasst (Eingang)' : 'erfasst', w.id, '', '', datei.name]])
+  if (auftrag) await d.haengeAn(j.indexId, 'Auftraege', [auftrag])
   j.belege.push(beleg)
   return beleg
 }

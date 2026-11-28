@@ -8,6 +8,8 @@ export interface Wartend {
   /** null = keine neue Datei, sondern Verweis auf einen Dauerbeleg (E6) */
   pdf: Blob | null
   dauerbeleg?: { id: string; name: string }
+  /** PDF aus dem Eingang (liegt schon in Drive): wird verschoben und umbenannt statt hochgeladen */
+  quelle?: { id: string; name: string }
   seiten: number
   erfasst_von: string
   erfasst_am: string

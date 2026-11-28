@@ -4,6 +4,7 @@ import Start from './seiten/Start'
 import Info from './seiten/Info'
 import Dokumente from './seiten/Dokumente'
 import Erfassen from './seiten/Erfassen'
+import Eingang from './seiten/Eingang'
 import Belege from './seiten/Belege'
 import Objekte from './seiten/Objekte'
 import ObjektSeite from './seiten/Objekt'
@@ -34,6 +35,7 @@ function Navigation() {
     <nav className="haupt">
       <NavLink to="/" end>Start</NavLink>
       <NavLink to="/erfassen">Erfassen</NavLink>
+      <NavLink to="/eingang">Eingang</NavLink>
       <NavLink to="/belege">Belege{wartend.length > 0 && <> <span className="marke" title="warten auf Übertragung">{wartend.length}</span></>}</NavLink>
       <NavLink to="/check">Check</NavLink>
       <NavLink to="/konto">Konto</NavLink>
@@ -72,6 +74,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Start />} />
           <Route path="/erfassen" element={<Erfassen />} />
+          <Route path="/eingang" element={<Eingang />} />
           <Route path="/belege" element={<Belege />} />
           <Route path="/belege/:id" element={<BelegBearbeiten />} />
           <Route path="/fahrten" element={<Fahrten />} />

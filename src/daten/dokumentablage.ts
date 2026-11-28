@@ -1,7 +1,7 @@
 // Dokumentenablage in Drive: Ordner „Steuer/Dokumente“ mit Unterordnern und Liste „00_Dokumente“ (ein Blatt).
 // Unabhängig vom Steuerjahr. Nur online.
 import { googleFetch } from '../google/api'
-import { erstelle, findeInOrdner, holeOderErstelleOrdner, holeOderErstellePfad, inPapierkorb, ladeHochGross, SHEET_MIME } from '../google/drive'
+import { erstelle, findeInOrdner, holeOderErstelleOrdner, holeOderErstellePfad, inPapierkorb, ladeHochGross, SHEET_MIME, verschiebeDatei } from '../google/drive'
 import { gespeicherteWurzel } from './einrichtung'
 import { nutzerEmail } from './dienste'
 import {
@@ -36,15 +36,25 @@ export async function ladeDokumente(): Promise<Dokument[]> {
   return ((d.values ?? []) as string[][]).filter((z) => z[0]).map(dokumentAusZeile)
 }
 
-/** Lädt die Datei in den passenden Unterordner und trägt das Dokument in die Liste ein. */
+/**
+ * Lädt die Datei in den passenden Unterordner und trägt das Dokument in die Liste ein.
+ * Eine Datei, die schon in Drive liegt (aus dem Eingang), wird stattdessen umbenannt und verschoben.
+ */
 export async function speichereDokument(
-  e: Omit<Dokument, 'id' | 'datei_id' | 'dateiname' | 'erfasst_von' | 'erfasst_am'>, datei: File,
+  e: Omit<Dokument, 'id' | 'datei_id' | 'dateiname' | 'erfasst_von' | 'erfasst_am'>, datei: File | { id: string; name: string },
   objekte: { id: string; bezeichnung: string }[], personen: { id: string; name: string }[],
 ): Promise<Dokument> {
   const { ordnerId, listeId } = await holeAblage()
   const ziel = await holeOderErstellePfad(dokumentPfad(e, objekte, personen), ordnerId)
   const name = dokumentDateiname(e.art, e.titel, datei.name)
-  const hoch = await ladeHochGross(name, datei.type || 'application/pdf', datei, ziel.id)
+  let hoch: { id: string; name: string }
+  if (datei instanceof Blob) hoch = await ladeHochGross(name, datei.type || 'application/pdf', datei, ziel.id)
+  else {
+    const erg = await verschiebeDatei(datei.id, name, ziel.id)
+    // Google lässt in „Meine Ablage“ nur den Eigentümer verschieben
+    if (erg.offen) throw new Error('Diese Datei darf nur ihr Eigentümer verschieben. Bitte in dessen App ablegen.')
+    hoch = erg
+  }
   const d: Dokument = { ...e, id: crypto.randomUUID(), datei_id: hoch.id, dateiname: hoch.name, erfasst_von: nutzerEmail(), erfasst_am: new Date().toISOString() }
   await googleFetch(`${SHEETS}/${listeId}/values/A1:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`, { method: 'POST', body: JSON.stringify({ values: [zeileAusDokument(d)] }) })
   return d

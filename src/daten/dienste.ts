@@ -35,6 +35,7 @@ export const dienste: SyncDienste = {
   ladeHoch,
   leseBlatt,
   haengeAn,
+  verschiebeDatei,
 }
 
 export const syncStatus = { laeuft: false, letztes: null as SyncErgebnis | null }
@@ -54,7 +55,8 @@ export async function starteSync(): Promise<SyncErgebnis | null> {
     // Lokale Kopie von Belegindex und Objekten auffrischen (für Offline-Erfassung und Duplikate)
     if (gespeicherteWurzel()) {
       // PDFs verschieben, die eine andere Person geändert hat, aber nur der Eigentümer verschieben darf
-      await erledigeAuftraegeOnline(AKTUELLES_JAHR).catch(() => undefined)
+      // (alle Jahre: Belege aus dem Eingang können in einem anderen Jahr landen)
+      for (const j of Object.keys(KONFIGURATIONEN).map(Number)) await erledigeAuftraegeOnline(j).catch(() => undefined)
       await aktualisiereBelege(AKTUELLES_JAHR).catch(() => undefined)
     }
     return syncStatus.letztes
