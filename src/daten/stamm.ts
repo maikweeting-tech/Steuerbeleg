@@ -8,6 +8,7 @@ import type { Rhythmus, Vorlage } from '../fachlich/vorlagen'
 import type { Buchung, Markierung } from '../fachlich/kontoauszug'
 import type { Antworten } from '../fachlich/assistent'
 import { KOPF_ID, LEERER_KOPF, type BescheidKopf, type BescheidPosten } from '../fachlich/bescheid'
+import type { AfaEingabe } from '../fachlich/afa'
 
 type Zelle = string | number
 type Zeile = (Zelle | undefined)[]
@@ -151,6 +152,20 @@ export function zeileAusStichwort(s: Stichwort, von: string, am: string): Zelle[
   return BLAETTER.Stichwoerter.map((x) => w[x] ?? '')
 }
 
+// ---------------------------------------------------------------- AfA-Hilfsrechnung
+
+const AFA_ZAHLEN = ['kaufpreis_ct', 'grunderwerbsteuer_ct', 'notar_ct', 'grundbuch_ct', 'makler_ct', 'sonstige_nk_ct', 'grundanteil_prozent', 'bodenrichtwert_ct', 'grundstueck_m2', 'fertigstellungsjahr', 'eigennutzung_prozent', 'renovierung_ct'] as const
+export function afaAusZeile(z: Zeile): AfaEingabe {
+  const g = lies('AfA', z)
+  const e = { objekt_id: g('objekt_id'), uebergang: g('uebergang'), bisher: g('bisher') } as AfaEingabe
+  for (const k of AFA_ZAHLEN) e[k] = zahl(g(k))
+  return e
+}
+export function zeileAusAfa(e: AfaEingabe, von: string, am: string): Zelle[] {
+  const w: Record<string, Zelle | null> = { ...e, geaendert_von: von, geaendert_am: am }
+  return BLAETTER.AfA.map((s) => w[s] ?? '')
+}
+
 export interface Stamm {
   objekte: Objekt[]
   einheiten: Einheit[]
@@ -167,9 +182,10 @@ export interface Stamm {
   bescheidKopf: BescheidKopf
   antworten: Antworten
   stichwoerter: Stichwort[]
+  afa: AfaEingabe[]
 }
 
-export const LEER: Stamm = { objekte: [], einheiten: [], einnahmen: [], aufteilung: [], kinder: [], fahrten: [], arbeitstage: [], pdfOffen: [], vorlagen: [], buchungen: [], bescheid: [], bescheidKopf: LEERER_KOPF, antworten: {}, stichwoerter: [] }
+export const LEER: Stamm = { objekte: [], einheiten: [], einnahmen: [], aufteilung: [], kinder: [], fahrten: [], arbeitstage: [], pdfOffen: [], vorlagen: [], buchungen: [], bescheid: [], bescheidKopf: LEERER_KOPF, antworten: {}, stichwoerter: [], afa: [] }
 
 export function stammAus(blaetter: Record<string, Zeile[]>): Stamm {
   const voll = (l: Zeile[] | undefined) => (l ?? []).filter((z) => z[0] !== undefined && z[0] !== '')
@@ -187,6 +203,7 @@ export function stammAus(blaetter: Record<string, Zeile[]>): Stamm {
     bescheid: voll(blaetter.Bescheid).filter((z) => z[0] !== KOPF_ID).map(bescheidAusZeile),
     antworten: antwortenAus(voll(blaetter.Erklaerung)),
     stichwoerter: stichwoerterAus(voll(blaetter.Stichwoerter)),
+    afa: voll(blaetter.AfA).map(afaAusZeile),
     bescheidKopf: kopfAusZeile(voll(blaetter.Bescheid).find((z) => z[0] === KOPF_ID)),
   }
 }

@@ -39,6 +39,8 @@ export const BLAETTER: Record<string, string[]> = {
   Erklaerung: ['id', 'wert', 'notiz', 'geaendert_von', 'geaendert_am'],
   // eigene Stichwörter für die automatische Zuordnung beim Erfassen (id = Stichwort)
   Stichwoerter: ['stichwort', 'modul', 'kategorie', 'geaendert_von', 'geaendert_am'],
+  // AfA-Hilfsrechnung je Objekt (nur Vorschlag für die Steuerberatung, id = objekt_id)
+  AfA: ['objekt_id', 'kaufpreis_ct', 'grunderwerbsteuer_ct', 'notar_ct', 'grundbuch_ct', 'makler_ct', 'sonstige_nk_ct', 'grundanteil_prozent', 'bodenrichtwert_ct', 'grundstueck_m2', 'fertigstellungsjahr', 'uebergang', 'eigennutzung_prozent', 'renovierung_ct', 'bisher', 'geaendert_von', 'geaendert_am'],
   Bescheid: ['id', 'bezeichnung', 'modul', 'erklaerung_ct', 'bescheid_ct', 'notiz', 'bescheiddatum', 'einspruchsfrist', 'geaendert_von', 'geaendert_am'],
 }
 
