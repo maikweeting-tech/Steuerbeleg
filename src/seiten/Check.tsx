@@ -14,6 +14,7 @@ import {
 import { istAngemeldet } from '../google/auth'
 import StichwortPflege from '../komponenten/StichwortPflege'
 import Info from '../komponenten/Info'
+import VorjahrKarte from '../komponenten/VorjahrKarte'
 
 const konfig = KONFIGURATIONEN[AKTUELLES_JAHR]
 const heute = () => new Date().toISOString().slice(0, 10)
@@ -98,6 +99,8 @@ export default function Check() {
           <ul className="liste">{unvollstaendig.map((b) => <li key={b.id}><Link to={`/belege/${b.id}`}>Nr. {b.belegnr}</Link> · {b.aussteller} · {formatEuro(b.betrag_ct ?? 0)}{b.notiz ? ` · ${b.notiz}` : ''}</li>)}</ul>
         </div>
       )}
+
+      <VorjahrKarte belege={belege} wartend={wartend} antworten={stamm.antworten ?? {}} online={online} />
 
       <Vorlagen belege={belege} vorlagen={stamm.vorlagen} online={online} laeuft={laeuft}
         speichern={(v, loeschen) => void aufgabe(() => speichereVorlage(AKTUELLES_JAHR, v, loeschen), loeschen ? 'Vorlage gelöscht.' : 'Vorlage gespeichert.')} />

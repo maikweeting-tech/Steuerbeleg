@@ -91,6 +91,10 @@ export default function Erfassen() {
         notiz: `${v.bezeichnung} ${vorlageMarke(v.id)}`, betrag_ct: v.betrag_ct ?? a.betrag_ct,
       }))
       if (v.betrag_ct !== null) setBetragText(formatEuro(v.betrag_ct).replace(/\s?€/, ''))
+    } else if (q.get('aussteller') && !q.get('betrag')) {
+      // aus dem Vorjahresvergleich: Aussteller und Zuordnung vorbelegen, Betrag/Datum vom neuen Beleg
+      vorbelegt.current = true
+      setE((a) => ({ ...a, aussteller: q.get('aussteller') ?? a.aussteller, modul: q.get('modul') ?? a.modul, kategorie: q.get('kategorie') ?? a.kategorie }))
     } else if (q.get('betrag')) {
       vorbelegt.current = true
       const c = Number(q.get('betrag'))
