@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { PDFDocument } from 'pdf-lib'
 import { begrenze, kontrastTabelle, skaliere } from '../src/erfassung/bild'
-import { erstellePdf } from '../src/erfassung/pdf'
+import { erstellePdf, seitenZahl } from '../src/erfassung/pdf'
 
 describe('Bild', () => {
   it('skaliert lange Kante auf 2000 px, kleine Bilder bleiben', () => {
@@ -34,5 +34,23 @@ describe('PDF', () => {
   })
   it('ohne Seiten Fehler', async () => {
     await expect(erstellePdf([])).rejects.toThrow()
+  })
+  it('einzelne PDF wird unverändert übernommen, auch wenn sie intern fehlerhaft ist', async () => {
+    const kaputt = new TextEncoder().encode(`%PDF-1.4
+1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj
+2 0 obj << /Type /Pages /Kids [3 0 R 5 0 R] /Count 2 >> endobj
+3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Annots [4 0 R] >> endobj
+4 0 obj << /Type /Annot /Subtype /Link /Rect [0 0 1 1] /Parent -1 0 R >> endobj
+5 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] >> endobj
+trailer << /Root 1 0 R >>
+%%EOF`)
+    const daten = kaputt.buffer as ArrayBuffer
+    const { pdf, seiten } = await erstellePdf([{ art: 'pdf', daten }])
+    expect(seiten).toBe(2)
+    expect(pdf.size).toBe(kaputt.byteLength)
+  })
+  it('Seitenzahl: Notzählung, wenn die PDF gar nicht lesbar ist', async () => {
+    const t = new TextEncoder().encode('kein pdf /Type /Page /Type /Pages /Type/Page')
+    expect(await seitenZahl(t.buffer as ArrayBuffer)).toBe(2)
   })
 })
