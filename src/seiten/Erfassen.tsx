@@ -8,7 +8,7 @@ import {
 } from '../fachlich/beleg'
 import { formatDatum, formatEuro, parseBetrag } from '../fachlich/format'
 import { alsJpeg, rendere, VOLL, vorschau, type Filter, type Seite } from '../erfassung/bild'
-import { erstellePdf, type Teil } from '../erfassung/pdf'
+import { erstellePdf, seitenZahl, type Teil } from '../erfassung/pdf'
 import { warteschlange } from '../daten/speicher'
 import { nutzerEmail, starteSync } from '../daten/dienste'
 import { gespeicherteWurzel } from '../daten/einrichtung'
@@ -206,7 +206,7 @@ export default function Erfassen() {
     try {
       if (quelle && seiten[0]?.art === 'pdf') {
         // Eingang: keine neue PDF, die vorhandene Datei wird beim Übertragen umbenannt und verschoben
-        const { seiten: anzahl } = await erstellePdf([{ art: 'pdf', daten: await seiten[0].datei.arrayBuffer() }])
+        const anzahl = await seitenZahl(await seiten[0].datei.arrayBuffer())
         await warteschlange.speichere({
           id: e.id, entwurf: { ...e, steuerjahr: wirksamesSteuerjahr(e) }, pdf: null, quelle, seiten: anzahl,
           erfasst_von: nutzerEmail(), erfasst_am: new Date().toISOString(), versuche: 0,
